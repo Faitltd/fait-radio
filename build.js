@@ -122,21 +122,21 @@ function createProductionIndex() {
   <meta name="description" content="FAIT Radio - A synthwave-themed web radio station with YouTube integration">
   <meta name="keywords" content="radio, synthwave, youtube, music, web-app, retro, 80s, fait">
   <meta name="author" content="FAIT Team">
-  
+
   <!-- Open Graph / Facebook -->
   <meta property="og:type" content="website">
-  <meta property="og:url" content="https://itsfait.com/radio/">
+  <meta property="og:url" content="https://radio.itsfait.com/">
   <meta property="og:title" content="FAIT Radio - Synthwave Web Radio">
   <meta property="og:description" content="Experience the retro-futuristic vibes with our synthwave radio station">
-  <meta property="og:image" content="https://itsfait.com/radio/img/fait-logo.png">
-  
+  <meta property="og:image" content="https://radio.itsfait.com/img/fait-logo.png">
+
   <!-- Twitter -->
   <meta property="twitter:card" content="summary_large_image">
-  <meta property="twitter:url" content="https://itsfait.com/radio/">
+  <meta property="twitter:url" content="https://radio.itsfait.com/">
   <meta property="twitter:title" content="FAIT Radio - Synthwave Web Radio">
   <meta property="twitter:description" content="Experience the retro-futuristic vibes with our synthwave radio station">
-  <meta property="twitter:image" content="https://itsfait.com/radio/img/fait-logo.png">
-  
+  <meta property="twitter:image" content="https://radio.itsfait.com/img/fait-logo.png">
+
   <!-- Favicon -->
   <link rel="icon" type="image/png" href="img/fait-logo.png">
   <link rel="apple-touch-icon" href="img/fait-logo.png">`;
@@ -155,7 +155,7 @@ function createProductionIndex() {
  */
 function createCNAME() {
   const cnamePath = path.join(buildConfig.outputDir, 'CNAME');
-  fs.writeFileSync(cnamePath, 'itsfait.com');
+  fs.writeFileSync(cnamePath, 'radio.itsfait.com');
 }
 
 /**
@@ -204,7 +204,7 @@ function build() {
   
   // Create GitHub Pages files
   createCNAME();
-  console.log('✅ Created CNAME file for itsfait.com');
+  console.log('✅ Created CNAME file for radio.itsfait.com');
   
   createNoJekyll();
   console.log('✅ Created .nojekyll file');

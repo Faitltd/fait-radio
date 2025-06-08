@@ -36,12 +36,11 @@ This guide explains how to deploy FAIT Radio to GitHub Pages and configure it fo
 
 ### Step 3: Configure Custom Domain
 
-#### Option A: Subdomain (Recommended)
-Set up `radio.itsfait.com`:
+#### Set up `radio.itsfait.com`:
 
 1. **DNS Configuration**:
    - Add a CNAME record: `radio` → `faitltd.github.io`
-   
+
 2. **GitHub Pages Settings**:
    - In repository Settings → Pages
    - Under **Custom domain**, enter: `radio.itsfait.com`

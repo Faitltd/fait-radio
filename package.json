@@ -33,7 +33,7 @@
   "bugs": {
     "url": "https://github.com/Faitltd/fait-radio/issues"
   },
-  "homepage": "https://itsfait.com/radio",
+  "homepage": "https://radio.itsfait.com",
   "devDependencies": {
     "http-server": "^14.1.1"
   },
