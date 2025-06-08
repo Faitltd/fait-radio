@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Station Switching Test - FAIT Radio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #000;
+      color: #fff;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #333;
+      border-radius: 5px;
+    }
+    .test-result {
+      margin: 10px 0;
+      padding: 5px;
+    }
+    .success { color: #4CAF50; }
+    .error { color: #f44336; }
+    .warning { color: #ff9800; }
+    .info { color: #2196F3; }
+    button {
+      margin: 5px;
+      padding: 10px 15px;
+      background: #ff00ff;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #cc00cc;
+    }
+    #content-area {
+      position: relative;
+      width: 100%;
+      height: 400px;
+      border: 1px solid #333;
+      margin: 20px 0;
+    }
+    #youtube-container {
+      position: absolute;
+      top: -1000px;
+      left: -1000px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎵 Station Switching Test - FAIT Radio</h1>
+  
+  <div class="test-section">
+    <h2>Test Controls</h2>
+    <button onclick="runInitializationTest()">1. Test Initialization</button>
+    <button onclick="runUserInteractionTest()">2. Test User Interaction</button>
+    <button onclick="runStationSwitchingTest()">3. Test Station Switching</button>
+    <button onclick="runAutoPlayTest()">4. Test Auto-Play After Switch</button>
+    <button onclick="clearResults()">Clear Results</button>
+  </div>
+
+  <div id="content-area"></div>
+  <div id="youtube-container"></div>
+  
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <div id="test-output"></div>
+  </div>
+
+  <!-- Load all required scripts -->
+  <script src="js/stations.js"></script>
+  <script src="js/window-manager.js"></script>
+  <script src="js/youtube-player.js"></script>
+  <script src="js/background-manager.js"></script>
+  <script src="js/radio-window.js"></script>
+
+  <script>
+    let windowManager, youtubePlayer, backgroundManager, radioWindow;
+    const output = document.getElementById('test-output');
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const className = type;
+      output.innerHTML += `<div class="test-result ${className}">[${timestamp}] ${message}</div>`;
+      console.log(`[${timestamp}] ${message}`);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function clearResults() {
+      output.innerHTML = '';
+    }
+
+    function runInitializationTest() {
+      log('🔧 Starting Initialization Test...', 'info');
+      
+      try {
+        // Test station data loading
+        if (window.stationData && Array.isArray(window.stationData)) {
+          log(`✅ Station data loaded: ${window.stationData.length} stations`, 'success');
+        } else {
+          log('❌ Station data not loaded properly', 'error');
+          return;
+        }
+
+        // Initialize components
+        windowManager = new WindowManager();
+        log('✅ WindowManager initialized', 'success');
+
+        youtubePlayer = new YouTubePlayer();
+        log('✅ YouTubePlayer initialized', 'success');
+
+        backgroundManager = new BackgroundManager();
+        log('✅ BackgroundManager initialized', 'success');
+
+        radioWindow = new RadioWindow(windowManager, youtubePlayer, backgroundManager);
+        log('✅ RadioWindow initialized', 'success');
+
+        // Create the radio window
+        const windowElement = radioWindow.create();
+        if (windowElement) {
+          log('✅ Radio window created successfully', 'success');
+          log('🎉 Initialization test completed successfully!', 'success');
+        } else {
+          log('❌ Failed to create radio window', 'error');
+        }
+
+      } catch (error) {
+        log(`❌ Initialization error: ${error.message}`, 'error');
+        console.error('Initialization error:', error);
+      }
+    }
+
+    function runUserInteractionTest() {
+      log('👆 Starting User Interaction Test...', 'info');
+      
+      if (!radioWindow || !radioWindow.windowElement) {
+        log('❌ Radio window not initialized. Run initialization test first.', 'error');
+        return;
+      }
+
+      try {
+        // Check initial state
+        log(`📊 Initial hasUserInteracted: ${radioWindow.hasUserInteracted}`, 'info');
+        log(`📊 Initial wasPlayingBeforeStationChange: ${radioWindow.wasPlayingBeforeStationChange}`, 'info');
+
+        // Simulate play button click
+        const playBtn = radioWindow.windowElement.querySelector('#radio-play-btn');
+        if (playBtn) {
+          log('🎵 Simulating play button click...', 'info');
+          playBtn.click();
+          
+          setTimeout(() => {
+            log(`📊 After play click - hasUserInteracted: ${radioWindow.hasUserInteracted}`, 'info');
+            if (radioWindow.hasUserInteracted) {
+              log('✅ User interaction tracking works correctly', 'success');
+            } else {
+              log('❌ User interaction not tracked properly', 'error');
+            }
+          }, 100);
+        } else {
+          log('❌ Play button not found', 'error');
+        }
+
+      } catch (error) {
+        log(`❌ User interaction test error: ${error.message}`, 'error');
+        console.error('User interaction test error:', error);
+      }
+    }
+
+    function runStationSwitchingTest() {
+      log('🔄 Starting Station Switching Test...', 'info');
+      
+      if (!radioWindow || !radioWindow.windowElement) {
+        log('❌ Radio window not initialized. Run initialization test first.', 'error');
+        return;
+      }
+
+      try {
+        const stationSelect = radioWindow.windowElement.querySelector('#station-select');
+        if (!stationSelect) {
+          log('❌ Station selector not found', 'error');
+          return;
+        }
+
+        // Get available stations
+        const options = stationSelect.querySelectorAll('option');
+        if (options.length < 3) {
+          log('❌ Not enough stations available for testing', 'error');
+          return;
+        }
+
+        // Simulate playing state
+        youtubePlayer.isPlaying = true;
+        log('🎵 Simulated playing state', 'info');
+
+        // Switch to a different station
+        const targetStation = options[2].value; // Pick the third station
+        log(`🔄 Switching to station: ${options[2].textContent} (${targetStation})`, 'info');
+        
+        stationSelect.value = targetStation;
+        stationSelect.dispatchEvent(new Event('change'));
+
+        setTimeout(() => {
+          log(`📊 wasPlayingBeforeStationChange: ${radioWindow.wasPlayingBeforeStationChange}`, 'info');
+          if (radioWindow.wasPlayingBeforeStationChange) {
+            log('✅ Station switching tracking works correctly', 'success');
+          } else {
+            log('❌ Station switching not tracked properly', 'error');
+          }
+        }, 100);
+
+      } catch (error) {
+        log(`❌ Station switching test error: ${error.message}`, 'error');
+        console.error('Station switching test error:', error);
+      }
+    }
+
+    function runAutoPlayTest() {
+      log('▶️ Starting Auto-Play Test...', 'info');
+      
+      if (!radioWindow || !youtubePlayer) {
+        log('❌ Components not initialized. Run initialization test first.', 'error');
+        return;
+      }
+
+      try {
+        // Set up conditions for auto-play
+        radioWindow.hasUserInteracted = true;
+        radioWindow.wasPlayingBeforeStationChange = true;
+        log('📊 Set up auto-play conditions', 'info');
+
+        // Mock the stationLoaded event
+        const mockStation = { name: 'Test Station', id: 'test' };
+        log('🎵 Simulating stationLoaded event...', 'info');
+
+        // Listen for play calls
+        const originalPlay = youtubePlayer.play;
+        let playCalled = false;
+        youtubePlayer.play = function() {
+          playCalled = true;
+          log('🎵 Auto-play triggered successfully!', 'success');
+          return originalPlay.call(this);
+        };
+
+        // Trigger the stationLoaded event
+        youtubePlayer.dispatchEvent('stationLoaded', { station: mockStation });
+
+        setTimeout(() => {
+          if (playCalled) {
+            log('✅ Auto-play test passed - play() was called automatically', 'success');
+          } else {
+            log('❌ Auto-play test failed - play() was not called', 'error');
+          }
+          
+          // Restore original play method
+          youtubePlayer.play = originalPlay;
+          
+          log('🎉 Auto-play test completed!', 'success');
+        }, 1000);
+
+      } catch (error) {
+        log(`❌ Auto-play test error: ${error.message}`, 'error');
+        console.error('Auto-play test error:', error);
+      }
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', () => {
+      log('🚀 Station Switching Test Page Loaded', 'info');
+      log('📝 Click the test buttons above to run individual tests', 'info');
+      log('💡 Recommended order: 1 → 2 → 3 → 4', 'warning');
+    });
+  </script>
+</body>
+</html>

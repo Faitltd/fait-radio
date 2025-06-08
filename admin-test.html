@@ -1,0 +1,192 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel Test - FAIT Radio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0a0a0a;
+      color: #ffffff;
+      padding: 20px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #FF1493;
+      border-radius: 8px;
+      background: rgba(255, 20, 147, 0.1);
+    }
+    .test-result {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .success { background: rgba(57, 255, 20, 0.2); border: 1px solid #39FF14; }
+    .error { background: rgba(255, 23, 68, 0.2); border: 1px solid #ff1744; }
+    .info { background: rgba(0, 255, 255, 0.2); border: 1px solid #00FFFF; }
+    button {
+      background: linear-gradient(45deg, #FF1493, #8A2BE2);
+      border: 2px solid #00FFFF;
+      color: white;
+      padding: 10px 20px;
+      border-radius: 6px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      box-shadow: 0 0 15px #FF1493;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎛️ FAIT Radio Admin Panel Test</h1>
+  
+  <div class="test-section">
+    <h2>Station Management Tests</h2>
+    <button onclick="testAddStation()">Test Add Station</button>
+    <button onclick="testSaveStations()">Test Save Stations</button>
+    <button onclick="testLoadStations()">Test Load Stations</button>
+    <button onclick="clearLocalStorage()">Clear LocalStorage</button>
+    <div id="station-test-results"></div>
+  </div>
+  
+  <div class="test-section">
+    <h2>Current Stations</h2>
+    <div id="current-stations"></div>
+    <button onclick="refreshStationList()">Refresh List</button>
+  </div>
+  
+  <div class="test-section">
+    <h2>Test Instructions</h2>
+    <ol>
+      <li>Open the main FAIT Radio application in another tab</li>
+      <li>Open both the Radio Player and Admin Panel</li>
+      <li>Use the Admin Panel to add a new station</li>
+      <li>Check if the new station appears in the Radio Player dropdown</li>
+      <li>Test the station by selecting it in the Radio Player</li>
+    </ol>
+  </div>
+
+  <script>
+    function addTestResult(message, type = 'info') {
+      const resultsDiv = document.getElementById('station-test-results');
+      const resultDiv = document.createElement('div');
+      resultDiv.className = `test-result ${type}`;
+      resultDiv.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      resultsDiv.appendChild(resultDiv);
+    }
+
+    function testAddStation() {
+      try {
+        // Simulate adding a station
+        const testStation = {
+          id: 'test-station-' + Date.now(),
+          name: 'Test Station ' + new Date().toLocaleTimeString(),
+          description: 'This is a test station',
+          youtubeId: 'jfKfPfyJRdk',
+          backgroundVideo: 'https://media.giphy.com/media/l0HlBO7eyXzSZkJri/mp4',
+          color: '#00FFFF',
+          artwork: ''
+        };
+
+        // Get existing stations
+        let stations = [];
+        const saved = localStorage.getItem('radioStations');
+        if (saved) {
+          stations = JSON.parse(saved);
+        }
+
+        // Add test station
+        stations.push(testStation);
+        
+        // Save back to localStorage
+        localStorage.setItem('radioStations', JSON.stringify(stations));
+        
+        addTestResult(`Added test station: ${testStation.name}`, 'success');
+        refreshStationList();
+      } catch (error) {
+        addTestResult(`Error adding station: ${error.message}`, 'error');
+      }
+    }
+
+    function testSaveStations() {
+      try {
+        const testData = [
+          {
+            id: 'test1',
+            name: 'Test Station 1',
+            description: 'First test station',
+            youtubeId: 'jfKfPfyJRdk',
+            backgroundVideo: '',
+            color: '#FF1493',
+            artwork: ''
+          },
+          {
+            id: 'test2',
+            name: 'Test Station 2',
+            description: 'Second test station',
+            youtubeId: '5qap5aO4i9A',
+            backgroundVideo: '',
+            color: '#8A2BE2',
+            artwork: ''
+          }
+        ];
+
+        localStorage.setItem('radioStations', JSON.stringify(testData));
+        addTestResult('Test stations saved to localStorage', 'success');
+        refreshStationList();
+      } catch (error) {
+        addTestResult(`Error saving stations: ${error.message}`, 'error');
+      }
+    }
+
+    function testLoadStations() {
+      try {
+        const saved = localStorage.getItem('radioStations');
+        if (saved) {
+          const stations = JSON.parse(saved);
+          addTestResult(`Loaded ${stations.length} stations from localStorage`, 'success');
+          refreshStationList();
+        } else {
+          addTestResult('No stations found in localStorage', 'info');
+        }
+      } catch (error) {
+        addTestResult(`Error loading stations: ${error.message}`, 'error');
+      }
+    }
+
+    function clearLocalStorage() {
+      localStorage.removeItem('radioStations');
+      addTestResult('LocalStorage cleared', 'info');
+      refreshStationList();
+    }
+
+    function refreshStationList() {
+      const stationsDiv = document.getElementById('current-stations');
+      try {
+        const saved = localStorage.getItem('radioStations');
+        if (saved) {
+          const stations = JSON.parse(saved);
+          stationsDiv.innerHTML = `
+            <h3>Found ${stations.length} stations:</h3>
+            <ul>
+              ${stations.map(station => `
+                <li><strong>${station.name}</strong> (${station.id}) - ${station.description}</li>
+              `).join('')}
+            </ul>
+          `;
+        } else {
+          stationsDiv.innerHTML = '<p>No stations in localStorage</p>';
+        }
+      } catch (error) {
+        stationsDiv.innerHTML = `<p class="error">Error loading stations: ${error.message}</p>`;
+      }
+    }
+
+    // Initial load
+    refreshStationList();
+  </script>
+</body>
+</html>

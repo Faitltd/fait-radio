@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Simple Embed Test - FAIT Radio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #000;
+      color: #fff;
+      max-width: 800px;
+    }
+    .test-form {
+      background: rgba(255, 0, 255, 0.1);
+      border: 1px solid #ff00ff;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .form-group {
+      margin-bottom: 15px;
+    }
+    label {
+      display: block;
+      margin-bottom: 5px;
+      color: #00ffff;
+    }
+    input[type="text"] {
+      width: 100%;
+      padding: 8px;
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid #333;
+      color: #fff;
+      border-radius: 4px;
+    }
+    button {
+      padding: 10px 15px;
+      background: #ff00ff;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-right: 10px;
+      margin-bottom: 10px;
+    }
+    button:hover {
+      background: #cc00cc;
+    }
+    .test-button {
+      background: #00ffff;
+      color: #000;
+    }
+    .test-button:hover {
+      background: #00cccc;
+    }
+    .results {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #333;
+      padding: 15px;
+      border-radius: 8px;
+      min-height: 100px;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+    .result-item {
+      margin: 5px 0;
+      padding: 8px;
+      border-radius: 4px;
+      border-left: 3px solid;
+    }
+    .success {
+      background: rgba(0, 255, 0, 0.1);
+      border-left-color: #00ff00;
+      color: #00ff00;
+    }
+    .error {
+      background: rgba(255, 0, 0, 0.1);
+      border-left-color: #ff0000;
+      color: #ff0000;
+    }
+    .info {
+      background: rgba(0, 255, 255, 0.1);
+      border-left-color: #00ffff;
+      color: #00ffff;
+    }
+    .warning {
+      background: rgba(255, 255, 0, 0.1);
+      border-left-color: #ffff00;
+      color: #ffff00;
+    }
+    #youtube-container {
+      position: absolute;
+      top: -1000px;
+      left: -1000px;
+    }
+    .examples {
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid #00ffff;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    .examples h3 {
+      margin-top: 0;
+      color: #00ffff;
+    }
+    .example-link {
+      color: #ff00ff;
+      cursor: pointer;
+      text-decoration: underline;
+    }
+    .example-link:hover {
+      color: #cc00cc;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎵 Simple YouTube Embed Test</h1>
+  
+  <div class="examples">
+    <h3>Quick Test Examples (click to use):</h3>
+    <p><span class="example-link" onclick="setInput('dQw4w9WgXcQ')">dQw4w9WgXcQ</span> - Rick Astley (should work)</p>
+    <p><span class="example-link" onclick="setInput('jfKfPfyJRdk')">jfKfPfyJRdk</span> - LoFi Hip Hop Radio (should work)</p>
+    <p><span class="example-link" onclick="setInput('https://www.youtube.com/watch?v=5qap5aO4i9A')">https://www.youtube.com/watch?v=5qap5aO4i9A</span> - Full URL (should work)</p>
+  </div>
+
+  <div class="test-form">
+    <div class="form-group">
+      <label for="youtube-input">YouTube Video ID, Playlist ID, or Full URL:</label>
+      <input type="text" id="youtube-input" placeholder="Enter YouTube content here..." />
+    </div>
+    
+    <button class="test-button" onclick="testEmbed()">🧪 Test Embed</button>
+    <button onclick="clearResults()">Clear Results</button>
+  </div>
+
+  <div class="results" id="results">
+    <p style="color: #666;">Test results will appear here...</p>
+  </div>
+
+  <div id="youtube-container"></div>
+
+  <script>
+    function setInput(value) {
+      document.getElementById('youtube-input').value = value;
+    }
+
+    function log(message, type = 'info') {
+      const results = document.getElementById('results');
+      const timestamp = new Date().toLocaleTimeString();
+      
+      const item = document.createElement('div');
+      item.className = `result-item ${type}`;
+      item.innerHTML = `<strong>[${timestamp}]</strong> ${message}`;
+      
+      results.appendChild(item);
+      results.scrollTop = results.scrollHeight;
+    }
+
+    function clearResults() {
+      document.getElementById('results').innerHTML = '<p style="color: #666;">Test results will appear here...</p>';
+    }
+
+    function testEmbed() {
+      const input = document.getElementById('youtube-input').value.trim();
+      
+      if (!input) {
+        log('Please enter a YouTube video ID, playlist ID, or URL', 'error');
+        return;
+      }
+
+      log(`🔍 Testing: ${input}`, 'info');
+
+      // Extract video ID from various formats
+      let videoId = input;
+      if (input.includes('youtube.com') || input.includes('youtu.be')) {
+        try {
+          const url = new URL(input);
+          const params = new URLSearchParams(url.search);
+          videoId = params.get('v') || params.get('list') || input.split('/').pop();
+        } catch (e) {
+          log('❌ Invalid URL format', 'error');
+          return;
+        }
+      }
+
+      // Load YouTube API if needed
+      if (!window.YT) {
+        log('⏳ Loading YouTube API...', 'info');
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        document.head.appendChild(script);
+        
+        window.onYouTubeIframeAPIReady = () => testEmbed();
+        return;
+      }
+
+      // Create test player
+      const testId = `test-${Date.now()}`;
+      const testDiv = document.createElement('div');
+      testDiv.id = testId;
+      document.getElementById('youtube-container').appendChild(testDiv);
+
+      let responded = false;
+      const timeout = setTimeout(() => {
+        if (!responded) {
+          responded = true;
+          log('⏰ Test timeout - video may not be available', 'warning');
+          cleanup();
+        }
+      }, 10000);
+
+      function cleanup() {
+        clearTimeout(timeout);
+        if (testDiv.parentNode) {
+          testDiv.parentNode.removeChild(testDiv);
+        }
+      }
+
+      try {
+        new YT.Player(testId, {
+          height: '1',
+          width: '1',
+          videoId: videoId,
+          playerVars: {
+            autoplay: 0,
+            controls: 0
+          },
+          events: {
+            onReady: () => {
+              if (!responded) {
+                responded = true;
+                log('✅ SUCCESS! This video allows embedding and will work in FAIT Radio', 'success');
+                cleanup();
+              }
+            },
+            onError: (event) => {
+              if (!responded) {
+                responded = true;
+                let message = 'Unknown error';
+                switch (event.data) {
+                  case 2:
+                    message = 'Invalid video ID';
+                    break;
+                  case 5:
+                    message = 'HTML5 player error';
+                    break;
+                  case 100:
+                    message = 'Video not found or private';
+                    break;
+                  case 101:
+                  case 150:
+                    message = 'Video owner does not allow embedding';
+                    break;
+                  default:
+                    message = `Error code: ${event.data}`;
+                }
+                log(`❌ FAILED: ${message}`, 'error');
+                log('💡 Try a different video that allows embedding', 'warning');
+                cleanup();
+              }
+            }
+          }
+        });
+      } catch (error) {
+        if (!responded) {
+          responded = true;
+          log(`❌ Test failed: ${error.message}`, 'error');
+          cleanup();
+        }
+      }
+    }
+
+    // Allow Enter key to trigger test
+    document.getElementById('youtube-input').addEventListener('keypress', function(e) {
+      if (e.key === 'Enter') {
+        testEmbed();
+      }
+    });
+  </script>
+</body>
+</html>

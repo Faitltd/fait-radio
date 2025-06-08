@@ -1,0 +1,254 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Embedding Test - FAIT Radio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #000;
+      color: #fff;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #333;
+      border-radius: 5px;
+    }
+    .station-test {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #555;
+      border-radius: 3px;
+    }
+    .success { color: #4CAF50; }
+    .error { color: #f44336; }
+    .warning { color: #ff9800; }
+    .info { color: #2196F3; }
+    button {
+      margin: 5px;
+      padding: 8px 12px;
+      background: #ff00ff;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #cc00cc;
+    }
+    #youtube-container {
+      position: absolute;
+      top: -1000px;
+      left: -1000px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎵 YouTube Embedding Test - FAIT Radio</h1>
+  
+  <div class="test-section">
+    <h2>Test Controls</h2>
+    <button onclick="testAllStations()">Test All Stations</button>
+    <button onclick="clearResults()">Clear Results</button>
+  </div>
+
+  <div id="youtube-container"></div>
+  
+  <div class="test-section">
+    <h2>Test Results</h2>
+    <div id="test-output"></div>
+  </div>
+
+  <!-- Load required scripts -->
+  <script src="js/stations.js"></script>
+
+  <script>
+    const output = document.getElementById('test-output');
+    let testIndex = 0;
+    let testResults = [];
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const className = type;
+      output.innerHTML += `<div class="station-test ${className}">[${timestamp}] ${message}</div>`;
+      console.log(`[${timestamp}] ${message}`);
+      output.scrollTop = output.scrollHeight;
+    }
+
+    function clearResults() {
+      output.innerHTML = '';
+      testResults = [];
+      testIndex = 0;
+    }
+
+    function testAllStations() {
+      if (!window.stationData || !Array.isArray(window.stationData)) {
+        log('❌ Station data not available', 'error');
+        return;
+      }
+
+      log('🚀 Starting embedding test for all stations...', 'info');
+      testIndex = 0;
+      testResults = [];
+      testNextStation();
+    }
+
+    function testNextStation() {
+      if (testIndex >= window.stationData.length) {
+        showTestSummary();
+        return;
+      }
+
+      const station = window.stationData[testIndex];
+      log(`🔍 Testing station: ${station.name} (${station.youtubeId})`, 'info');
+      
+      testStationEmbedding(station, (success, error) => {
+        testResults.push({
+          station: station,
+          success: success,
+          error: error
+        });
+        
+        if (success) {
+          log(`✅ ${station.name}: Embedding successful`, 'success');
+        } else {
+          log(`❌ ${station.name}: ${error}`, 'error');
+        }
+        
+        testIndex++;
+        setTimeout(() => testNextStation(), 2000); // Wait 2 seconds between tests
+      });
+    }
+
+    function testStationEmbedding(station, callback) {
+      // Load YouTube API if not already loaded
+      if (!window.YT) {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        
+        window.onYouTubeIframeAPIReady = () => {
+          testStationEmbedding(station, callback);
+        };
+        return;
+      }
+
+      // Create a test player
+      const testContainer = document.createElement('div');
+      testContainer.id = `test-player-${station.id}`;
+      document.getElementById('youtube-container').appendChild(testContainer);
+
+      let hasResponded = false;
+      const timeout = setTimeout(() => {
+        if (!hasResponded) {
+          hasResponded = true;
+          callback(false, 'Timeout - no response from YouTube');
+          cleanup();
+        }
+      }, 10000); // 10 second timeout
+
+      function cleanup() {
+        clearTimeout(timeout);
+        if (testContainer.parentNode) {
+          testContainer.parentNode.removeChild(testContainer);
+        }
+      }
+
+      try {
+        const player = new YT.Player(testContainer.id, {
+          height: '1',
+          width: '1',
+          videoId: station.youtubeId,
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            iv_load_policy: 3,
+            modestbranding: 1,
+            playsinline: 1,
+            rel: 0,
+            showinfo: 0
+          },
+          events: {
+            onReady: (event) => {
+              if (!hasResponded) {
+                hasResponded = true;
+                callback(true, null);
+                cleanup();
+              }
+            },
+            onError: (event) => {
+              if (!hasResponded) {
+                hasResponded = true;
+                let errorMessage = 'Unknown error';
+                switch (event.data) {
+                  case 2:
+                    errorMessage = 'Invalid video ID';
+                    break;
+                  case 5:
+                    errorMessage = 'HTML5 player error';
+                    break;
+                  case 100:
+                    errorMessage = 'Video not found or private';
+                    break;
+                  case 101:
+                  case 150:
+                    errorMessage = 'Embedding not allowed';
+                    break;
+                  default:
+                    errorMessage = `Error code: ${event.data}`;
+                }
+                callback(false, errorMessage);
+                cleanup();
+              }
+            }
+          }
+        });
+      } catch (error) {
+        if (!hasResponded) {
+          hasResponded = true;
+          callback(false, `Exception: ${error.message}`);
+          cleanup();
+        }
+      }
+    }
+
+    function showTestSummary() {
+      log('📊 Test Summary:', 'info');
+      
+      const successful = testResults.filter(r => r.success);
+      const failed = testResults.filter(r => !r.success);
+      
+      log(`✅ Successful: ${successful.length}/${testResults.length}`, 'success');
+      log(`❌ Failed: ${failed.length}/${testResults.length}`, 'error');
+      
+      if (successful.length > 0) {
+        log('🎉 Working stations:', 'success');
+        successful.forEach(result => {
+          log(`  • ${result.station.name} (${result.station.youtubeId})`, 'success');
+        });
+      }
+      
+      if (failed.length > 0) {
+        log('💥 Failed stations:', 'error');
+        failed.forEach(result => {
+          log(`  • ${result.station.name}: ${result.error}`, 'error');
+        });
+      }
+      
+      log('🏁 Testing completed!', 'info');
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', () => {
+      log('🚀 YouTube Embedding Test Page Loaded', 'info');
+      log('📝 Click "Test All Stations" to check which videos allow embedding', 'info');
+    });
+  </script>
+</body>
+</html>

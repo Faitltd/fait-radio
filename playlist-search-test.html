@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Playlist Search Test</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #000;
+      color: #00FFFF;
+      padding: 20px;
+      margin: 0;
+    }
+    .search-container {
+      background: rgba(0, 255, 255, 0.1);
+      border: 2px solid #00FFFF;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 10px 0;
+    }
+    input, button, select {
+      background: rgba(26, 26, 46, 0.8);
+      border: 2px solid #00FFFF;
+      color: #00FFFF;
+      padding: 8px 12px;
+      margin: 5px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+    button {
+      cursor: pointer;
+    }
+    button:hover {
+      background: rgba(0, 255, 255, 0.3);
+    }
+    .result-item {
+      background: rgba(0, 0, 0, 0.3);
+      border: 1px solid #00FFFF;
+      border-radius: 6px;
+      padding: 12px;
+      margin: 8px 0;
+      display: flex;
+      align-items: center;
+      gap: 12px;
+    }
+    .result-thumbnail {
+      width: 48px;
+      height: 48px;
+      background: linear-gradient(45deg, #FF1493, #8A2BE2);
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 20px;
+    }
+    .result-info {
+      flex: 1;
+    }
+    .result-info h4 {
+      margin: 0 0 4px 0;
+      color: #FFFFFF;
+    }
+    .result-info p {
+      margin: 0 0 4px 0;
+      color: #CCCCCC;
+      font-size: 12px;
+    }
+    .debug-info {
+      background: rgba(255, 0, 0, 0.1);
+      border: 1px solid #FF0000;
+      padding: 10px;
+      margin: 10px 0;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Playlist Search Test</h1>
+  
+  <div class="search-container">
+    <h2>Search Test</h2>
+    <div>
+      <input type="text" id="search-input" placeholder="Search for music..." value="lofi">
+      <button onclick="testSearch()">🔍 Search</button>
+      <button onclick="testDatabase()">📊 Test Database</button>
+      <button onclick="clearResults()">🗑️ Clear</button>
+    </div>
+    <div>
+      <select id="search-type">
+        <option value="video">Videos</option>
+        <option value="channel">Channels</option>
+        <option value="playlist">Playlists</option>
+      </select>
+    </div>
+  </div>
+  
+  <div class="debug-info" id="debug-info">
+    Debug info will appear here...
+  </div>
+  
+  <div id="search-results">
+    <p>Click "Search" to test the search functionality</p>
+  </div>
+
+  <script>
+    // Copy the music database from the playlist maker
+    const musicDatabase = [
+      // LoFi & Chill
+      { id: 'jfKfPfyJRdk', title: 'LoFi Hip Hop Radio - Beats to Relax/Study to', channel: 'LoFi Girl', duration: 'LIVE', thumbnail: '🎵', genre: 'lofi', description: '24/7 chill beats for studying and relaxing' },
+      { id: '5qap5aO4i9A', title: 'Chillhop Radio - jazzy & lofi hip hop beats', channel: 'Chillhop Music', duration: 'LIVE', thumbnail: '🎧', genre: 'lofi', description: 'Relaxing beats for work and study' },
+      { id: 'rUxyKA_-grg', title: 'Chillhop Cafe - Study & Relax Music', channel: 'Chillhop Music', duration: '1:45:20', thumbnail: '☕', genre: 'lofi', description: 'Perfect background music for productivity' },
+      
+      // Synthwave & Retro
+      { id: 'MVPTGNGiI-4', title: 'Synthwave Radio - 24/7 Retro Music', channel: 'Synthwave Radio', duration: 'LIVE', thumbnail: '🌆', genre: 'synthwave', description: 'Non-stop synthwave and retrowave music' },
+      { id: 'WQFioUONjQs', title: 'Cyberpunk 2077 Radio - Outrun Mix', channel: 'Retro Future', duration: '2:30:15', thumbnail: '🚗', genre: 'synthwave', description: 'Futuristic synthwave for night drives' },
+      { id: 'MV_3Dpw-BRY', title: 'Miami Vice Synthwave Mix', channel: 'Neon Nights', duration: '1:20:45', thumbnail: '🌴', genre: 'synthwave', description: '80s inspired electronic music' },
+      
+      // Jazz & Classical
+      { id: 'Dx5qFachd3A', title: 'Smooth Jazz Radio - 24/7 Live Stream', channel: 'Jazz Radio', duration: 'LIVE', thumbnail: '🎷', genre: 'jazz', description: 'Smooth jazz for relaxation and ambiance' },
+      { id: 'vmDDOFXSgAs', title: 'Coffee Shop Jazz - Relaxing Instrumental', channel: 'Jazz Cafe', duration: '3:15:30', thumbnail: '☕', genre: 'jazz', description: 'Perfect jazz for coffee shops and study' },
+      { id: 'jgpJVI3tDbY', title: 'Classical Music for Studying', channel: 'Classical Focus', duration: '4:00:00', thumbnail: '🎼', genre: 'classical', description: 'Concentration music from the masters' },
+      
+      // Ambient & Focus
+      { id: 'kgx4WGK0oNU', title: 'Deep Focus - Music For Studying, Concentration', channel: 'Ambient Worlds', duration: '2:15:30', thumbnail: '🧘', genre: 'ambient', description: 'Ambient music for deep concentration' },
+      { id: 'DWcJFNfaw9c', title: 'Space Ambient Music - 8 Hours', channel: 'Space Sounds', duration: '8:00:00', thumbnail: '🌌', genre: 'ambient', description: 'Journey through the cosmos with ambient sounds' },
+      { id: 'lFcSrYw-ARY', title: 'Rain Sounds for Sleep', channel: 'Nature Sounds', duration: '10:00:00', thumbnail: '🌧️', genre: 'ambient', description: 'Natural rain sounds for relaxation' }
+    ];
+    
+    function addDebug(message) {
+      const debugDiv = document.getElementById('debug-info');
+      debugDiv.innerHTML += `<div>${new Date().toLocaleTimeString()}: ${message}</div>`;
+    }
+    
+    function testDatabase() {
+      addDebug(`Database loaded with ${musicDatabase.length} tracks`);
+      addDebug(`Sample track: ${musicDatabase[0].title}`);
+      
+      // Test each genre
+      const genres = [...new Set(musicDatabase.map(track => track.genre))];
+      addDebug(`Available genres: ${genres.join(', ')}`);
+    }
+    
+    function testSearch() {
+      const query = document.getElementById('search-input').value.trim();
+      const searchType = document.getElementById('search-type').value;
+      
+      addDebug(`Starting search for: "${query}" (type: ${searchType})`);
+      
+      if (!query) {
+        addDebug('❌ Empty search query');
+        return;
+      }
+      
+      try {
+        const results = performSearch(query, searchType);
+        addDebug(`✅ Search completed. Found ${results.length} results`);
+        displayResults(results);
+      } catch (error) {
+        addDebug(`❌ Search error: ${error.message}`);
+        console.error('Search error:', error);
+      }
+    }
+    
+    function performSearch(query, type) {
+      addDebug(`Performing search with query: "${query}"`);
+      
+      // Smart search algorithm
+      const searchTerms = query.toLowerCase().split(' ');
+      addDebug(`Search terms: ${searchTerms.join(', ')}`);
+      
+      const results = musicDatabase.filter(track => {
+        const searchableText = `${track.title} ${track.channel} ${track.description} ${track.genre}`.toLowerCase();
+        
+        // Check if any search term matches
+        const matches = searchTerms.some(term => 
+          searchableText.includes(term) ||
+          track.genre.includes(term)
+        );
+        
+        if (matches) {
+          addDebug(`✅ Match found: ${track.title}`);
+        }
+        
+        return matches;
+      });
+      
+      addDebug(`Filtered results: ${results.length} tracks`);
+      
+      // Sort by relevance
+      results.sort((a, b) => {
+        const aRelevance = calculateRelevance(query, a);
+        const bRelevance = calculateRelevance(query, b);
+        return bRelevance - aRelevance;
+      });
+      
+      return results.slice(0, 10);
+    }
+    
+    function calculateRelevance(query, track) {
+      const queryLower = query.toLowerCase();
+      let score = 0;
+      
+      if (track.title.toLowerCase().includes(queryLower)) score += 10;
+      if (track.channel.toLowerCase().includes(queryLower)) score += 5;
+      if (track.genre.toLowerCase().includes(queryLower)) score += 8;
+      if (track.description.toLowerCase().includes(queryLower)) score += 3;
+      if (track.duration === 'LIVE') score += 2;
+      
+      return score;
+    }
+    
+    function displayResults(results) {
+      const resultsContainer = document.getElementById('search-results');
+      
+      if (results.length === 0) {
+        resultsContainer.innerHTML = '<div style="color: #FF6B6B;">No results found. Try a different search term.</div>';
+        return;
+      }
+      
+      addDebug(`Displaying ${results.length} results`);
+      
+      resultsContainer.innerHTML = results.map((result, index) => `
+        <div class="result-item">
+          <div class="result-thumbnail">${result.thumbnail}</div>
+          <div class="result-info">
+            <h4>${result.title}</h4>
+            <p><strong>Channel:</strong> ${result.channel}</p>
+            <p><strong>Duration:</strong> ${result.duration}</p>
+            <p><strong>Genre:</strong> ${result.genre}</p>
+            <p>${result.description}</p>
+          </div>
+          <div>
+            <button onclick="addToPlaylist('${result.id}')">+ Add</button>
+          </div>
+        </div>
+      `).join('');
+    }
+    
+    function addToPlaylist(trackId) {
+      const track = musicDatabase.find(t => t.id === trackId);
+      addDebug(`Adding to playlist: ${track.title}`);
+      alert(`Added "${track.title}" to playlist!`);
+    }
+    
+    function clearResults() {
+      document.getElementById('search-results').innerHTML = '<p>Results cleared</p>';
+      document.getElementById('debug-info').innerHTML = 'Debug info cleared...';
+    }
+    
+    // Test on load
+    document.addEventListener('DOMContentLoaded', () => {
+      addDebug('🔍 Search test page loaded');
+      testDatabase();
+    });
+    
+    // Allow Enter key to search
+    document.getElementById('search-input').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        testSearch();
+      }
+    });
+  </script>
+</body>
+</html>

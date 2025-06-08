@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Station Debug - FAIT Radio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #000;
+      color: #fff;
+    }
+    .debug-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #333;
+      border-radius: 5px;
+    }
+    .station-item {
+      margin: 10px 0;
+      padding: 10px;
+      border: 1px solid #555;
+      border-radius: 3px;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .station-info {
+      flex: 1;
+    }
+    .station-controls {
+      display: flex;
+      gap: 10px;
+    }
+    button {
+      padding: 5px 10px;
+      background: #ff00ff;
+      color: white;
+      border: none;
+      border-radius: 3px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    button:hover {
+      background: #cc00cc;
+    }
+    button.test {
+      background: #2196F3;
+    }
+    button.test:hover {
+      background: #1976D2;
+    }
+    .status {
+      margin-left: 10px;
+      font-size: 12px;
+    }
+    .success { color: #4CAF50; }
+    .error { color: #f44336; }
+    .testing { color: #ff9800; }
+    #youtube-container {
+      position: absolute;
+      top: -1000px;
+      left: -1000px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 Station Debug Panel - FAIT Radio</h1>
+  
+  <div class="debug-section">
+    <h2>Station List</h2>
+    <div id="station-list"></div>
+  </div>
+
+  <div id="youtube-container"></div>
+
+  <!-- Load required scripts -->
+  <script src="js/stations.js"></script>
+
+  <script>
+    function renderStationList() {
+      const container = document.getElementById('station-list');
+      
+      if (!window.stationData || !Array.isArray(window.stationData)) {
+        container.innerHTML = '<p class="error">❌ Station data not available</p>';
+        return;
+      }
+
+      container.innerHTML = '';
+      
+      window.stationData.forEach(station => {
+        const stationDiv = document.createElement('div');
+        stationDiv.className = 'station-item';
+        stationDiv.innerHTML = `
+          <div class="station-info">
+            <strong>${station.name}</strong><br>
+            <small>${station.description}</small><br>
+            <code>YouTube ID: ${station.youtubeId}</code>
+          </div>
+          <div class="station-controls">
+            <button class="test" onclick="testStation('${station.id}')">Test Embed</button>
+            <button onclick="openYouTube('${station.youtubeId}')">Open YouTube</button>
+            <span class="status" id="status-${station.id}"></span>
+          </div>
+        `;
+        container.appendChild(stationDiv);
+      });
+    }
+
+    function setStatus(stationId, message, type = 'info') {
+      const statusEl = document.getElementById(`status-${stationId}`);
+      if (statusEl) {
+        statusEl.textContent = message;
+        statusEl.className = `status ${type}`;
+      }
+    }
+
+    function testStation(stationId) {
+      const station = window.stationData.find(s => s.id === stationId);
+      if (!station) return;
+
+      setStatus(stationId, 'Testing...', 'testing');
+
+      // Load YouTube API if not already loaded
+      if (!window.YT) {
+        const tag = document.createElement('script');
+        tag.src = 'https://www.youtube.com/iframe_api';
+        const firstScriptTag = document.getElementsByTagName('script')[0];
+        firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+        
+        window.onYouTubeIframeAPIReady = () => {
+          testStation(stationId);
+        };
+        return;
+      }
+
+      // Create a test player
+      const testContainer = document.createElement('div');
+      testContainer.id = `test-player-${stationId}-${Date.now()}`;
+      document.getElementById('youtube-container').appendChild(testContainer);
+
+      let hasResponded = false;
+      const timeout = setTimeout(() => {
+        if (!hasResponded) {
+          hasResponded = true;
+          setStatus(stationId, 'Timeout', 'error');
+          cleanup();
+        }
+      }, 10000);
+
+      function cleanup() {
+        clearTimeout(timeout);
+        if (testContainer.parentNode) {
+          testContainer.parentNode.removeChild(testContainer);
+        }
+      }
+
+      try {
+        const player = new YT.Player(testContainer.id, {
+          height: '1',
+          width: '1',
+          videoId: station.youtubeId,
+          playerVars: {
+            autoplay: 0,
+            controls: 0,
+            disablekb: 1,
+            fs: 0,
+            iv_load_policy: 3,
+            modestbranding: 1,
+            playsinline: 1,
+            rel: 0,
+            showinfo: 0
+          },
+          events: {
+            onReady: (event) => {
+              if (!hasResponded) {
+                hasResponded = true;
+                setStatus(stationId, '✅ Works', 'success');
+                cleanup();
+              }
+            },
+            onError: (event) => {
+              if (!hasResponded) {
+                hasResponded = true;
+                let errorMessage = 'Unknown error';
+                switch (event.data) {
+                  case 2:
+                    errorMessage = 'Invalid ID';
+                    break;
+                  case 5:
+                    errorMessage = 'HTML5 error';
+                    break;
+                  case 100:
+                    errorMessage = 'Not found';
+                    break;
+                  case 101:
+                  case 150:
+                    errorMessage = 'No embed';
+                    break;
+                  default:
+                    errorMessage = `Error ${event.data}`;
+                }
+                setStatus(stationId, `❌ ${errorMessage}`, 'error');
+                cleanup();
+              }
+            }
+          }
+        });
+      } catch (error) {
+        if (!hasResponded) {
+          hasResponded = true;
+          setStatus(stationId, `❌ ${error.message}`, 'error');
+          cleanup();
+        }
+      }
+    }
+
+    function openYouTube(videoId) {
+      window.open(`https://www.youtube.com/watch?v=${videoId}`, '_blank');
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', () => {
+      renderStationList();
+    });
+  </script>
+</body>
+</html>

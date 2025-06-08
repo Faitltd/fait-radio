@@ -1,0 +1,232 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAIT Radio - Diagnostic</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #000;
+      color: #00FFFF;
+      padding: 20px;
+      margin: 0;
+    }
+    .diagnostic {
+      background: rgba(0, 255, 255, 0.1);
+      border: 2px solid #00FFFF;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 10px 0;
+    }
+    .error { color: #ff1744; }
+    .success { color: #39FF14; }
+    .warning { color: #ffa000; }
+    .info { color: #00FFFF; }
+    pre {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔧 FAIT Radio Diagnostic</h1>
+  
+  <div class="diagnostic">
+    <h2>📋 Initialization Check</h2>
+    <div id="init-status">Checking...</div>
+  </div>
+  
+  <div class="diagnostic">
+    <h2>📁 File Loading Status</h2>
+    <div id="file-status">Checking...</div>
+  </div>
+  
+  <div class="diagnostic">
+    <h2>🎯 DOM Elements</h2>
+    <div id="dom-status">Checking...</div>
+  </div>
+  
+  <div class="diagnostic">
+    <h2>📊 JavaScript Objects</h2>
+    <div id="js-status">Checking...</div>
+  </div>
+  
+  <div class="diagnostic">
+    <h2>❌ Console Errors</h2>
+    <div id="error-log">No errors captured yet...</div>
+  </div>
+  
+  <div class="diagnostic">
+    <h2>🔧 Quick Fixes</h2>
+    <button onclick="reloadPage()" style="margin: 5px; padding: 10px;">🔄 Reload Page</button>
+    <button onclick="clearAllStorage()" style="margin: 5px; padding: 10px;">🗑️ Clear All Storage</button>
+    <button onclick="testBasicHTML()" style="margin: 5px; padding: 10px;">🧪 Test Basic HTML</button>
+  </div>
+
+  <script>
+    // Capture console errors
+    const errors = [];
+    const originalError = console.error;
+    console.error = function(...args) {
+      errors.push(args.join(' '));
+      updateErrorLog();
+      originalError.apply(console, args);
+    };
+    
+    function updateStatus(elementId, message, type = 'info') {
+      const element = document.getElementById(elementId);
+      if (element) {
+        element.innerHTML += `<div class="${type}">${message}</div>`;
+      }
+    }
+    
+    function updateErrorLog() {
+      const errorLog = document.getElementById('error-log');
+      if (errors.length === 0) {
+        errorLog.innerHTML = '<div class="success">No errors captured</div>';
+      } else {
+        errorLog.innerHTML = errors.map(error => `<div class="error">❌ ${error}</div>`).join('');
+      }
+    }
+    
+    function checkInitialization() {
+      updateStatus('init-status', '🔍 Checking initialization...', 'info');
+      
+      // Check if DOM is ready
+      if (document.readyState === 'complete') {
+        updateStatus('init-status', '✅ DOM ready', 'success');
+      } else {
+        updateStatus('init-status', '⚠️ DOM not ready: ' + document.readyState, 'warning');
+      }
+      
+      // Check if app object exists
+      if (typeof window.app !== 'undefined') {
+        updateStatus('init-status', '✅ App object exists', 'success');
+        
+        // Check app initialization
+        if (window.app.windowManager) {
+          updateStatus('init-status', '✅ Window manager initialized', 'success');
+        } else {
+          updateStatus('init-status', '❌ Window manager missing', 'error');
+        }
+        
+        if (window.app.youtubePlayer) {
+          updateStatus('init-status', '✅ YouTube player initialized', 'success');
+        } else {
+          updateStatus('init-status', '❌ YouTube player missing', 'error');
+        }
+      } else {
+        updateStatus('init-status', '❌ App object not found', 'error');
+      }
+    }
+    
+    function checkFileLoading() {
+      updateStatus('file-status', '🔍 Checking file loading...', 'info');
+      
+      const requiredObjects = [
+        { name: 'WindowManager', obj: window.WindowManager },
+        { name: 'YouTubePlayer', obj: window.YouTubePlayer },
+        { name: 'BackgroundManager', obj: window.BackgroundManager },
+        { name: 'RadioWindow', obj: window.RadioWindow },
+        { name: 'AdminPanel', obj: window.AdminPanel },
+        { name: 'stationData', obj: window.stationData }
+      ];
+      
+      requiredObjects.forEach(item => {
+        if (typeof item.obj !== 'undefined') {
+          updateStatus('file-status', `✅ ${item.name} loaded`, 'success');
+        } else {
+          updateStatus('file-status', `❌ ${item.name} not loaded`, 'error');
+        }
+      });
+    }
+    
+    function checkDOMElements() {
+      updateStatus('dom-status', '🔍 Checking DOM elements...', 'info');
+      
+      const requiredElements = [
+        'content-area',
+        'dock-items',
+        'clock',
+        'desktop',
+        'top-bar'
+      ];
+      
+      requiredElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+          updateStatus('dom-status', `✅ #${id} found`, 'success');
+        } else {
+          updateStatus('dom-status', `❌ #${id} missing`, 'error');
+        }
+      });
+    }
+    
+    function checkJavaScriptObjects() {
+      updateStatus('js-status', '🔍 Checking JavaScript objects...', 'info');
+      
+      // Check global objects
+      const globals = ['YT', 'app', 'stationData'];
+      globals.forEach(name => {
+        if (typeof window[name] !== 'undefined') {
+          updateStatus('js-status', `✅ ${name} available`, 'success');
+        } else {
+          updateStatus('js-status', `❌ ${name} missing`, 'error');
+        }
+      });
+      
+      // Check if YouTube API is loaded
+      if (typeof YT !== 'undefined' && YT.Player) {
+        updateStatus('js-status', '✅ YouTube API ready', 'success');
+      } else {
+        updateStatus('js-status', '❌ YouTube API not ready', 'error');
+      }
+    }
+    
+    function reloadPage() {
+      window.location.reload();
+    }
+    
+    function clearAllStorage() {
+      localStorage.clear();
+      sessionStorage.clear();
+      updateStatus('js-status', '🗑️ All storage cleared', 'info');
+      setTimeout(() => {
+        window.location.reload();
+      }, 1000);
+    }
+    
+    function testBasicHTML() {
+      // Create a simple test to see if basic HTML works
+      const testDiv = document.createElement('div');
+      testDiv.innerHTML = '<p style="color: lime;">✅ Basic HTML/JS working</p>';
+      document.body.appendChild(testDiv);
+      
+      setTimeout(() => {
+        testDiv.remove();
+      }, 3000);
+    }
+    
+    // Run diagnostics when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      setTimeout(() => {
+        checkInitialization();
+        checkFileLoading();
+        checkDOMElements();
+        checkJavaScriptObjects();
+        updateErrorLog();
+      }, 500);
+    });
+    
+    // Also run after a delay to catch late-loading issues
+    setTimeout(() => {
+      updateStatus('init-status', '🔄 Running delayed check...', 'info');
+      checkInitialization();
+      checkJavaScriptObjects();
+    }, 2000);
+  </script>
+</body>
+</html>

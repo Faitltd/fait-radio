@@ -1,0 +1,161 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Mixtape Editor Demo - FAIT Radio</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #000;
+      color: #fff;
+    }
+    .demo-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #333;
+      border-radius: 5px;
+    }
+    .demo-instructions {
+      background: rgba(255, 0, 255, 0.1);
+      border: 1px solid var(--neon-pink);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    #content-area {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      border: 1px solid #333;
+      margin: 20px 0;
+    }
+    button {
+      padding: 10px 20px;
+      background: #ff00ff;
+      color: white;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      margin: 5px;
+    }
+    button:hover {
+      background: #cc00cc;
+    }
+    .chill-btn {
+      background: #00ffff;
+      color: #000;
+    }
+    .chill-btn:hover {
+      background: #00cccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎵 Mixtape Editor Demo - FAIT Radio</h1>
+  
+  <div class="demo-instructions">
+    <h2>🎛️ New Windowed Mixtape Editor</h2>
+    <p><strong>What's New:</strong></p>
+    <ul>
+      <li>✨ <strong>No more browser pop-ups!</strong> Mixtape creation now uses a proper windowed interface</li>
+      <li>🧪 <strong>Test Playlist feature</strong> - Check if YouTube playlists allow embedding before saving</li>
+      <li>🎨 <strong>Better form design</strong> - Clear labels, helpful hints, and validation</li>
+      <li>🏷️ <strong>Tags support</strong> - Organize your mixtapes with custom tags</li>
+      <li>🎯 <strong>Responsive design</strong> - Works on any screen size</li>
+    </ul>
+    
+    <p><strong>How to Test:</strong></p>
+    <ol>
+      <li>Click "Open Mixtapes" to see the mixtape collection</li>
+      <li>Click "Add Mixtape" to create a new one with the windowed editor</li>
+      <li>Try the "Test Playlist" feature to verify YouTube embedding</li>
+      <li>Edit existing mixtapes to see the form pre-filled</li>
+    </ol>
+    
+    <p><strong>Test Playlist Examples:</strong></p>
+    <ul>
+      <li><code>PLrAl6rYAS4Z7hWOgOgKjKW8VaOtMnKGWz</code> - Synthwave playlist</li>
+      <li><code>https://youtube.com/playlist?list=PLOHoVaTp8R7eQDSiZifrpjsQy0WuCCYDr</code> - Full URL</li>
+    </ul>
+  </div>
+
+  <div class="demo-section">
+    <h2>Demo Controls</h2>
+    <button onclick="openMixtapes()">🎵 Open Mixtapes</button>
+    <button class="chill-btn" onclick="openRadio()">📻 Open Radio (for comparison)</button>
+  </div>
+
+  <div id="content-area"></div>
+
+  <!-- Load all required scripts -->
+  <script src="js/stations.js"></script>
+  <script src="js/window-manager.js"></script>
+  <script src="js/youtube-player.js"></script>
+  <script src="js/background-manager.js"></script>
+  <script src="js/radio-window.js"></script>
+  <script src="js/mixtapes-window.js"></script>
+
+  <script>
+    let windowManager, youtubePlayer, backgroundManager, mixtapesWindow, radioWindow;
+
+    function initializeComponents() {
+      if (!windowManager) {
+        windowManager = new WindowManager();
+        console.log('WindowManager initialized');
+      }
+
+      if (!youtubePlayer) {
+        youtubePlayer = new YouTubePlayer();
+        console.log('YouTubePlayer initialized');
+      }
+
+      if (!backgroundManager) {
+        backgroundManager = new BackgroundManager();
+        console.log('BackgroundManager initialized');
+      }
+    }
+
+    function openMixtapes() {
+      initializeComponents();
+
+      if (!mixtapesWindow) {
+        mixtapesWindow = new MixtapesWindow(windowManager, youtubePlayer, backgroundManager);
+        console.log('MixtapesWindow initialized');
+      }
+
+      // Create the mixtapes window
+      const mixtapeWindow = mixtapesWindow.create();
+      if (mixtapeWindow) {
+        console.log('Mixtapes window opened successfully');
+      } else {
+        console.error('Failed to open mixtapes window');
+      }
+    }
+
+    function openRadio() {
+      initializeComponents();
+
+      if (!radioWindow) {
+        radioWindow = new RadioWindow(windowManager, youtubePlayer, backgroundManager);
+        console.log('RadioWindow initialized');
+      }
+
+      // Create the radio window
+      const radioWindowElement = radioWindow.create();
+      if (radioWindowElement) {
+        console.log('Radio window opened successfully');
+      } else {
+        console.error('Failed to open radio window');
+      }
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', () => {
+      console.log('Mixtape Editor Demo loaded');
+    });
+  </script>
+</body>
+</html>

@@ -1,0 +1,44 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAIT Radio Test</title>
+</head>
+<body>
+  <h1>Testing FAIT Radio Components</h1>
+  <div id="test-output"></div>
+  
+  <script src="js/stations.js"></script>
+  <script src="js/window-manager.js"></script>
+  <script src="js/youtube-player.js"></script>
+  <script src="js/background-manager.js"></script>
+  <script src="js/radio-window.js"></script>
+  
+  <script>
+    const output = document.getElementById('test-output');
+    
+    try {
+      output.innerHTML += '<p>✅ Stations data loaded: ' + (window.stationData ? window.stationData.length + ' stations' : 'Failed') + '</p>';
+      
+      const wm = new WindowManager();
+      output.innerHTML += '<p>✅ WindowManager created</p>';
+      
+      const yp = new YouTubePlayer();
+      output.innerHTML += '<p>✅ YouTubePlayer created</p>';
+      
+      const bm = new BackgroundManager();
+      output.innerHTML += '<p>✅ BackgroundManager created</p>';
+      
+      const rw = new RadioWindow(wm, yp, bm);
+      output.innerHTML += '<p>✅ RadioWindow created</p>';
+      
+      output.innerHTML += '<p>🎉 All components loaded successfully!</p>';
+      
+    } catch (error) {
+      output.innerHTML += '<p>❌ Error: ' + error.message + '</p>';
+      console.error('Test error:', error);
+    }
+  </script>
+</body>
+</html>

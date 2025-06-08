@@ -1,0 +1,1445 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAIT Radio - End-to-End Testing Suite</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .test-overlay {
+      position: fixed;
+      top: 0;
+      right: 0;
+      width: 400px;
+      height: 100vh;
+      background: rgba(0, 0, 0, 0.95);
+      border-left: 3px solid #00FFFF;
+      z-index: 10000;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+      color: #00FFFF;
+      padding: 20px;
+      box-sizing: border-box;
+    }
+    .test-header {
+      text-align: center;
+      margin-bottom: 20px;
+      border-bottom: 2px solid #00FFFF;
+      padding-bottom: 10px;
+    }
+    .test-section {
+      margin: 15px 0;
+      border: 1px solid #333;
+      border-radius: 6px;
+      padding: 10px;
+    }
+    .test-section h3 {
+      margin: 0 0 10px 0;
+      color: #FF1493;
+      font-size: 14px;
+    }
+    .test-item {
+      margin: 5px 0;
+      padding: 3px 0;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+    }
+    .test-status {
+      font-weight: bold;
+      min-width: 20px;
+    }
+    .success { color: #39FF14; }
+    .error { color: #FF1744; }
+    .warning { color: #FFA000; }
+    .pending { color: #FFD700; }
+    .info { color: #00FFFF; }
+    .test-controls {
+      margin: 15px 0;
+      text-align: center;
+    }
+    .test-btn {
+      background: rgba(0, 255, 255, 0.2);
+      border: 2px solid #00FFFF;
+      color: #00FFFF;
+      padding: 8px 12px;
+      margin: 3px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: monospace;
+      font-size: 11px;
+    }
+    .test-btn:hover {
+      background: rgba(0, 255, 255, 0.4);
+    }
+    .test-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .test-progress {
+      width: 100%;
+      height: 20px;
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #00FFFF;
+      border-radius: 10px;
+      overflow: hidden;
+      margin: 10px 0;
+    }
+    .test-progress-bar {
+      height: 100%;
+      background: linear-gradient(90deg, #FF1493, #00FFFF);
+      width: 0%;
+      transition: width 0.3s ease;
+    }
+    .test-log {
+      background: rgba(0, 0, 0, 0.7);
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 10px;
+      max-height: 200px;
+      overflow-y: auto;
+      font-size: 10px;
+      margin: 10px 0;
+    }
+    .log-entry {
+      margin: 2px 0;
+      padding: 2px 0;
+      border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+    }
+    .minimize-btn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      background: none;
+      border: 1px solid #00FFFF;
+      color: #00FFFF;
+      width: 25px;
+      height: 25px;
+      border-radius: 50%;
+      cursor: pointer;
+      font-size: 12px;
+    }
+    .test-overlay.minimized {
+      width: 60px;
+      height: 60px;
+      border-radius: 50%;
+      padding: 15px;
+      overflow: hidden;
+    }
+    .test-overlay.minimized * {
+      display: none;
+    }
+    .test-overlay.minimized .minimize-btn {
+      display: block;
+      position: static;
+      margin: 0;
+    }
+  </style>
+</head>
+<body>
+  <!-- Main FAIT Radio App -->
+  <div id="app-container">
+    <div id="desktop">
+      <!-- Header with menu and time -->
+      <header id="top-bar">
+        <ul id="menu">
+          <li><button id="menu-button"><img src="img/menu-icon.png" alt="Menu"></button></li>
+          <li><button id="login-button">Become a member</button></li>
+        </ul>
+        <aside id="time-display">
+          <div id="date">Sat 7 Jun 1997</div>
+          <div id="clock"><img src="img/clock-icon.png" alt="Clock"><span>04:22</span></div>
+        </aside>
+      </header>
+
+      <!-- Main content area -->
+      <section id="content-area">
+        <!-- Windows will be dynamically added here -->
+      </section>
+
+      <!-- Dock/taskbar -->
+      <div id="dock-container">
+        <div id="dock">
+          <ul id="dock-items">
+            <!-- Dock items will be added here -->
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Test Overlay -->
+  <div class="test-overlay" id="test-overlay">
+    <button class="minimize-btn" onclick="toggleTestOverlay()">−</button>
+    
+    <div class="test-header">
+      <h2>🧪 E2E Test Suite</h2>
+      <div class="test-progress">
+        <div class="test-progress-bar" id="progress-bar"></div>
+      </div>
+      <div id="test-summary">Ready to test</div>
+    </div>
+
+    <div class="test-controls">
+      <button class="test-btn" onclick="runAllTests()" id="run-all-btn">🚀 Run All Tests</button>
+      <button class="test-btn" onclick="runQuickTests()" id="quick-test-btn">⚡ Quick Test</button>
+      <button class="test-btn" onclick="clearTestResults()">🗑️ Clear</button>
+      <button class="test-btn" onclick="exportTestResults()">📊 Export</button>
+    </div>
+
+    <div class="test-section">
+      <h3>🏗️ Infrastructure</h3>
+      <div id="infrastructure-tests">
+        <div class="test-item">
+          <span>DOM Structure</span>
+          <span class="test-status pending" id="dom-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>Script Loading</span>
+          <span class="test-status pending" id="scripts-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>App Initialization</span>
+          <span class="test-status pending" id="app-init-status">⏳</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>🪟 Window System</h3>
+      <div id="window-tests">
+        <div class="test-item">
+          <span>Window Manager</span>
+          <span class="test-status pending" id="window-manager-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>Window Creation</span>
+          <span class="test-status pending" id="window-creation-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>Window Controls</span>
+          <span class="test-status pending" id="window-controls-status">⏳</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>🎵 Audio System</h3>
+      <div id="audio-tests">
+        <div class="test-item">
+          <span>YouTube Player</span>
+          <span class="test-status pending" id="youtube-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>Station Loading</span>
+          <span class="test-status pending" id="station-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>Audio Controls</span>
+          <span class="test-status pending" id="audio-controls-status">⏳</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>🎬 Background System</h3>
+      <div id="background-tests">
+        <div class="test-item">
+          <span>Background Manager</span>
+          <span class="test-status pending" id="background-manager-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>Video Loading</span>
+          <span class="test-status pending" id="video-loading-status">⏳</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>🖥️ Application Windows</h3>
+      <div id="app-window-tests">
+        <div class="test-item">
+          <span>Radio Window</span>
+          <span class="test-status pending" id="radio-window-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>Admin Panel</span>
+          <span class="test-status pending" id="admin-panel-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>Mixtapes Window</span>
+          <span class="test-status pending" id="mixtapes-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>Playlist Maker</span>
+          <span class="test-status pending" id="playlist-maker-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>Other Windows</span>
+          <span class="test-status pending" id="other-windows-status">⏳</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>💾 Data & Storage</h3>
+      <div id="data-tests">
+        <div class="test-item">
+          <span>LocalStorage</span>
+          <span class="test-status pending" id="storage-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>Station Data</span>
+          <span class="test-status pending" id="station-data-status">⏳</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-section">
+      <h3>🖱️ User Interactions</h3>
+      <div id="interaction-tests">
+        <div class="test-item">
+          <span>Dock Interactions</span>
+          <span class="test-status pending" id="dock-status">⏳</span>
+        </div>
+        <div class="test-item">
+          <span>Menu Functions</span>
+          <span class="test-status pending" id="menu-status">⏳</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="test-log" id="test-log">
+      <div class="log-entry">Test log will appear here...</div>
+    </div>
+  </div>
+
+  <!-- Load scripts in correct order -->
+  <script src="js/stations.js"></script>
+  <script src="js/window-manager.js"></script>
+  <script src="js/youtube-player.js"></script>
+  <script src="js/background-manager.js"></script>
+  <script src="js/radio-window.js"></script>
+  <script src="js/admin-panel.js"></script>
+  <script src="js/mixtapes-window.js"></script>
+  <script src="js/newsroom-window.js"></script>
+  <script src="js/members-window.js"></script>
+  <script src="js/events-window.js"></script>
+  <script src="js/social-window.js"></script>
+  <script src="js/vacation-window.js"></script>
+  <script src="js/guestbook-window.js"></script>
+  <script src="js/playlist-maker-window.js"></script>
+  <script src="js/app.js"></script>
+
+  <!-- E2E Testing Script -->
+  <script>
+    // Test Suite Configuration
+    const testConfig = {
+      totalTests: 0,
+      passedTests: 0,
+      failedTests: 0,
+      startTime: null,
+      testResults: {},
+      isRunning: false
+    };
+
+    // Test logging
+    function logTest(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      const logEntry = document.createElement('div');
+      logEntry.className = `log-entry ${type}`;
+      logEntry.innerHTML = `<span style="color: #666">${timestamp}</span> ${message}`;
+
+      const testLog = document.getElementById('test-log');
+      testLog.appendChild(logEntry);
+      testLog.scrollTop = testLog.scrollHeight;
+
+      console.log(`[E2E Test] ${message}`);
+    }
+
+    // Update test status
+    function updateTestStatus(testId, status, message = '') {
+      const statusElement = document.getElementById(testId);
+      if (!statusElement) return;
+
+      const statusMap = {
+        'pass': { symbol: '✅', class: 'success' },
+        'fail': { symbol: '❌', class: 'error' },
+        'warning': { symbol: '⚠️', class: 'warning' },
+        'pending': { symbol: '⏳', class: 'pending' },
+        'running': { symbol: '🔄', class: 'info' }
+      };
+
+      const statusInfo = statusMap[status] || statusMap['pending'];
+      statusElement.textContent = statusInfo.symbol;
+      statusElement.className = `test-status ${statusInfo.class}`;
+
+      testConfig.testResults[testId] = { status, message, timestamp: new Date() };
+
+      if (status === 'pass') testConfig.passedTests++;
+      if (status === 'fail') testConfig.failedTests++;
+
+      updateProgress();
+    }
+
+    // Update progress bar
+    function updateProgress() {
+      const progress = testConfig.totalTests > 0 ?
+        ((testConfig.passedTests + testConfig.failedTests) / testConfig.totalTests) * 100 : 0;
+
+      document.getElementById('progress-bar').style.width = `${progress}%`;
+
+      const summary = document.getElementById('test-summary');
+      summary.innerHTML = `
+        ${testConfig.passedTests} passed,
+        ${testConfig.failedTests} failed,
+        ${testConfig.totalTests - testConfig.passedTests - testConfig.failedTests} pending
+      `;
+    }
+
+    // Test helper functions
+    function waitFor(condition, timeout = 5000) {
+      return new Promise((resolve, reject) => {
+        const startTime = Date.now();
+        const checkCondition = () => {
+          if (condition()) {
+            resolve();
+          } else if (Date.now() - startTime > timeout) {
+            reject(new Error('Timeout waiting for condition'));
+          } else {
+            setTimeout(checkCondition, 100);
+          }
+        };
+        checkCondition();
+      });
+    }
+
+    function sleep(ms) {
+      return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Infrastructure Tests
+    async function testDOMStructure() {
+      updateTestStatus('dom-status', 'running');
+      logTest('Testing DOM structure...', 'info');
+
+      const requiredElements = [
+        'app-container', 'desktop', 'content-area', 'dock-items',
+        'clock', 'top-bar', 'menu-button', 'login-button'
+      ];
+
+      let missingElements = [];
+
+      for (const elementId of requiredElements) {
+        const element = document.getElementById(elementId);
+        if (!element) {
+          missingElements.push(elementId);
+        }
+      }
+
+      if (missingElements.length === 0) {
+        updateTestStatus('dom-status', 'pass');
+        logTest('✅ All required DOM elements found', 'success');
+        return true;
+      } else {
+        updateTestStatus('dom-status', 'fail');
+        logTest(`❌ Missing DOM elements: ${missingElements.join(', ')}`, 'error');
+        return false;
+      }
+    }
+
+    async function testScriptLoading() {
+      updateTestStatus('scripts-status', 'running');
+      logTest('Testing script loading...', 'info');
+
+      const requiredClasses = [
+        'WindowManager', 'YouTubePlayer', 'BackgroundManager',
+        'RadioWindow', 'AdminPanel', 'stationData'
+      ];
+
+      let missingClasses = [];
+
+      for (const className of requiredClasses) {
+        if (typeof window[className] === 'undefined') {
+          missingClasses.push(className);
+        }
+      }
+
+      if (missingClasses.length === 0) {
+        updateTestStatus('scripts-status', 'pass');
+        logTest('✅ All required classes loaded', 'success');
+        return true;
+      } else {
+        updateTestStatus('scripts-status', 'fail');
+        logTest(`❌ Missing classes: ${missingClasses.join(', ')}`, 'error');
+        return false;
+      }
+    }
+
+    async function testAppInitialization() {
+      updateTestStatus('app-init-status', 'running');
+      logTest('Testing app initialization...', 'info');
+
+      try {
+        // Wait for app to be available
+        await waitFor(() => typeof window.app !== 'undefined', 10000);
+
+        const app = window.app;
+        const requiredComponents = [
+          'windowManager', 'youtubePlayer', 'backgroundManager',
+          'radioWindow', 'adminPanel'
+        ];
+
+        let missingComponents = [];
+
+        for (const component of requiredComponents) {
+          if (!app[component]) {
+            missingComponents.push(component);
+          }
+        }
+
+        if (missingComponents.length === 0) {
+          updateTestStatus('app-init-status', 'pass');
+          logTest('✅ App initialized with all components', 'success');
+          return true;
+        } else {
+          updateTestStatus('app-init-status', 'fail');
+          logTest(`❌ Missing app components: ${missingComponents.join(', ')}`, 'error');
+          return false;
+        }
+      } catch (error) {
+        updateTestStatus('app-init-status', 'fail');
+        logTest(`❌ App initialization failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    // Window System Tests
+    async function testWindowManager() {
+      updateTestStatus('window-manager-status', 'running');
+      logTest('Testing window manager...', 'info');
+
+      try {
+        const app = window.app;
+        if (!app || !app.windowManager) {
+          throw new Error('Window manager not available');
+        }
+
+        const wm = app.windowManager;
+
+        // Test basic window manager properties
+        if (typeof wm.createWindow !== 'function') {
+          throw new Error('createWindow method not available');
+        }
+
+        if (!Array.isArray(wm.windows)) {
+          throw new Error('windows array not available');
+        }
+
+        updateTestStatus('window-manager-status', 'pass');
+        logTest('✅ Window manager is functional', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('window-manager-status', 'fail');
+        logTest(`❌ Window manager test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function testWindowCreation() {
+      updateTestStatus('window-creation-status', 'running');
+      logTest('Testing window creation...', 'info');
+
+      try {
+        const app = window.app;
+        const wm = app.windowManager;
+
+        // Create a test window
+        const testWindow = wm.createWindow({
+          id: 'e2e-test-window',
+          title: 'E2E Test Window',
+          content: '<p>Test content</p>',
+          width: 300,
+          height: 200
+        });
+
+        if (!testWindow) {
+          throw new Error('Window creation returned null');
+        }
+
+        // Check if window exists in DOM
+        const windowElement = document.getElementById('e2e-test-window');
+        if (!windowElement) {
+          throw new Error('Window not found in DOM');
+        }
+
+        // Check window structure
+        const header = windowElement.querySelector('.window-header');
+        const content = windowElement.querySelector('.window-content');
+
+        if (!header || !content) {
+          throw new Error('Window structure incomplete');
+        }
+
+        // Clean up
+        setTimeout(() => {
+          wm.closeWindow(testWindow);
+        }, 1000);
+
+        updateTestStatus('window-creation-status', 'pass');
+        logTest('✅ Window creation successful', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('window-creation-status', 'fail');
+        logTest(`❌ Window creation failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function testWindowControls() {
+      updateTestStatus('window-controls-status', 'running');
+      logTest('Testing window controls...', 'info');
+
+      try {
+        const app = window.app;
+        const wm = app.windowManager;
+
+        // Create a test window
+        const testWindow = wm.createWindow({
+          id: 'e2e-controls-test',
+          title: 'Controls Test',
+          content: '<p>Testing controls</p>',
+          width: 300,
+          height: 200
+        });
+
+        await sleep(500); // Wait for window to be created
+
+        const windowElement = document.getElementById('e2e-controls-test');
+        if (!windowElement) {
+          throw new Error('Test window not found');
+        }
+
+        // Test window controls
+        const closeBtn = windowElement.querySelector('.window-close');
+        const minBtn = windowElement.querySelector('.window-minimize');
+        const maxBtn = windowElement.querySelector('.window-maximize');
+
+        if (!closeBtn || !minBtn || !maxBtn) {
+          throw new Error('Window controls not found');
+        }
+
+        // Test minimize
+        minBtn.click();
+        await sleep(200);
+
+        if (windowElement.style.display !== 'none') {
+          logTest('⚠️ Minimize function may not be working', 'warning');
+        }
+
+        // Restore window
+        wm.restoreWindow(windowElement);
+        await sleep(200);
+
+        // Test maximize
+        maxBtn.click();
+        await sleep(200);
+
+        // Clean up
+        wm.closeWindow(testWindow);
+
+        updateTestStatus('window-controls-status', 'pass');
+        logTest('✅ Window controls functional', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('window-controls-status', 'fail');
+        logTest(`❌ Window controls test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    // Audio System Tests
+    async function testYouTubePlayer() {
+      updateTestStatus('youtube-status', 'running');
+      logTest('Testing YouTube player...', 'info');
+
+      try {
+        const app = window.app;
+        if (!app || !app.youtubePlayer) {
+          throw new Error('YouTube player not available');
+        }
+
+        const player = app.youtubePlayer;
+
+        // Test basic player properties
+        if (typeof player.loadStation !== 'function') {
+          throw new Error('loadStation method not available');
+        }
+
+        if (typeof player.play !== 'function') {
+          throw new Error('play method not available');
+        }
+
+        if (typeof player.pause !== 'function') {
+          throw new Error('pause method not available');
+        }
+
+        if (typeof player.setVolume !== 'function') {
+          throw new Error('setVolume method not available');
+        }
+
+        // Test volume control
+        const originalVolume = player.getVolume();
+        player.setVolume(50);
+
+        if (player.getVolume() !== 50) {
+          logTest('⚠️ Volume control may not be working properly', 'warning');
+        }
+
+        // Restore original volume
+        player.setVolume(originalVolume);
+
+        updateTestStatus('youtube-status', 'pass');
+        logTest('✅ YouTube player is functional', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('youtube-status', 'fail');
+        logTest(`❌ YouTube player test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function testStationLoading() {
+      updateTestStatus('station-status', 'running');
+      logTest('Testing station loading...', 'info');
+
+      try {
+        // Check if station data is available
+        if (typeof window.stationData === 'undefined') {
+          throw new Error('Station data not available');
+        }
+
+        const stations = window.stationData;
+        if (!Array.isArray(stations) || stations.length === 0) {
+          throw new Error('No stations available');
+        }
+
+        // Test station data structure
+        const firstStation = stations[0];
+        const requiredFields = ['id', 'name', 'youtubeId'];
+
+        for (const field of requiredFields) {
+          if (!firstStation[field]) {
+            throw new Error(`Station missing required field: ${field}`);
+          }
+        }
+
+        updateTestStatus('station-status', 'pass');
+        logTest(`✅ Station data loaded (${stations.length} stations)`, 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('station-status', 'fail');
+        logTest(`❌ Station loading test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function testAudioControls() {
+      updateTestStatus('audio-controls-status', 'running');
+      logTest('Testing audio controls...', 'info');
+
+      try {
+        const app = window.app;
+        const player = app.youtubePlayer;
+
+        // Test volume range
+        player.setVolume(0);
+        if (player.getVolume() !== 0) {
+          throw new Error('Volume control not working (min)');
+        }
+
+        player.setVolume(100);
+        if (player.getVolume() !== 100) {
+          throw new Error('Volume control not working (max)');
+        }
+
+        // Test invalid volume values
+        player.setVolume(-10);
+        if (player.getVolume() < 0) {
+          throw new Error('Volume validation not working (negative)');
+        }
+
+        player.setVolume(150);
+        if (player.getVolume() > 100) {
+          throw new Error('Volume validation not working (over 100)');
+        }
+
+        // Reset to reasonable volume
+        player.setVolume(50);
+
+        updateTestStatus('audio-controls-status', 'pass');
+        logTest('✅ Audio controls functional', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('audio-controls-status', 'fail');
+        logTest(`❌ Audio controls test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    // Background System Tests
+    async function testBackgroundManager() {
+      updateTestStatus('background-manager-status', 'running');
+      logTest('Testing background manager...', 'info');
+
+      try {
+        const app = window.app;
+        if (!app || !app.backgroundManager) {
+          throw new Error('Background manager not available');
+        }
+
+        const bgManager = app.backgroundManager;
+
+        // Test basic methods
+        if (typeof bgManager.loadVideo !== 'function') {
+          throw new Error('loadVideo method not available');
+        }
+
+        if (typeof bgManager.enable !== 'function') {
+          throw new Error('enable method not available');
+        }
+
+        if (typeof bgManager.disable !== 'function') {
+          throw new Error('disable method not available');
+        }
+
+        // Test enable/disable
+        bgManager.disable();
+        if (bgManager.isEnabled) {
+          logTest('⚠️ Background manager disable may not be working', 'warning');
+        }
+
+        bgManager.enable();
+
+        updateTestStatus('background-manager-status', 'pass');
+        logTest('✅ Background manager is functional', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('background-manager-status', 'fail');
+        logTest(`❌ Background manager test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function testVideoLoading() {
+      updateTestStatus('video-loading-status', 'running');
+      logTest('Testing video loading...', 'info');
+
+      try {
+        const app = window.app;
+        const bgManager = app.backgroundManager;
+
+        // Check if video container exists
+        const videoContainer = document.getElementById('background-video-container');
+        if (!videoContainer) {
+          throw new Error('Background video container not found');
+        }
+
+        // Test fallback functionality
+        bgManager.fallbackToStaticBackground();
+
+        updateTestStatus('video-loading-status', 'pass');
+        logTest('✅ Video loading system functional', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('video-loading-status', 'fail');
+        logTest(`❌ Video loading test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    // Application Window Tests
+    async function testRadioWindow() {
+      updateTestStatus('radio-window-status', 'running');
+      logTest('Testing radio window...', 'info');
+
+      try {
+        const app = window.app;
+        if (!app || !app.radioWindow) {
+          throw new Error('Radio window not available');
+        }
+
+        // Check if radio window is already created (it should be by default)
+        const radioWindowElement = document.getElementById('radio-player');
+        if (!radioWindowElement) {
+          // Try to create it
+          app.radioWindow.create();
+          await sleep(1000);
+
+          const newRadioWindow = document.getElementById('radio-player');
+          if (!newRadioWindow) {
+            throw new Error('Radio window creation failed');
+          }
+        }
+
+        // Test radio window structure
+        const radioWindow = document.getElementById('radio-player');
+        const playButton = radioWindow.querySelector('#radio-play-btn');
+        const volumeSlider = radioWindow.querySelector('#radio-volume');
+
+        if (!playButton) {
+          throw new Error('Play button not found in radio window');
+        }
+
+        if (!volumeSlider) {
+          throw new Error('Volume slider not found in radio window');
+        }
+
+        updateTestStatus('radio-window-status', 'pass');
+        logTest('✅ Radio window is functional', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('radio-window-status', 'fail');
+        logTest(`❌ Radio window test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function testAdminPanel() {
+      updateTestStatus('admin-panel-status', 'running');
+      logTest('Testing admin panel...', 'info');
+
+      try {
+        const app = window.app;
+        if (!app || !app.adminPanel) {
+          throw new Error('Admin panel not available');
+        }
+
+        // Test admin panel creation
+        const adminWindow = app.adminPanel.create();
+        if (!adminWindow) {
+          throw new Error('Admin panel creation failed');
+        }
+
+        await sleep(500);
+
+        // Check admin panel structure
+        const adminElement = document.getElementById('admin-panel');
+        if (!adminElement) {
+          throw new Error('Admin panel not found in DOM');
+        }
+
+        // Clean up
+        setTimeout(() => {
+          app.windowManager.closeWindow(adminWindow);
+        }, 1000);
+
+        updateTestStatus('admin-panel-status', 'pass');
+        logTest('✅ Admin panel is functional', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('admin-panel-status', 'fail');
+        logTest(`❌ Admin panel test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function testMixtapesWindow() {
+      updateTestStatus('mixtapes-status', 'running');
+      logTest('Testing mixtapes window...', 'info');
+
+      try {
+        const app = window.app;
+        if (!app || !app.mixtapesWindow) {
+          throw new Error('Mixtapes window not available');
+        }
+
+        const mixtapesWindow = app.mixtapesWindow.create();
+        if (!mixtapesWindow) {
+          throw new Error('Mixtapes window creation failed');
+        }
+
+        await sleep(500);
+
+        const mixtapesElement = document.getElementById('mixtapes');
+        if (!mixtapesElement) {
+          throw new Error('Mixtapes window not found in DOM');
+        }
+
+        // Clean up
+        setTimeout(() => {
+          app.windowManager.closeWindow(mixtapesWindow);
+        }, 1000);
+
+        updateTestStatus('mixtapes-status', 'pass');
+        logTest('✅ Mixtapes window is functional', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('mixtapes-status', 'fail');
+        logTest(`❌ Mixtapes window test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function testPlaylistMaker() {
+      updateTestStatus('playlist-maker-status', 'running');
+      logTest('Testing playlist maker...', 'info');
+
+      try {
+        const app = window.app;
+        if (!app || !app.playlistMakerWindow) {
+          throw new Error('Playlist maker not available');
+        }
+
+        const playlistWindow = app.playlistMakerWindow.create();
+        if (!playlistWindow) {
+          throw new Error('Playlist maker creation failed');
+        }
+
+        await sleep(500);
+
+        const playlistElement = document.getElementById('playlist-maker');
+        if (!playlistElement) {
+          throw new Error('Playlist maker not found in DOM');
+        }
+
+        // Clean up
+        setTimeout(() => {
+          app.windowManager.closeWindow(playlistWindow);
+        }, 1000);
+
+        updateTestStatus('playlist-maker-status', 'pass');
+        logTest('✅ Playlist maker is functional', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('playlist-maker-status', 'fail');
+        logTest(`❌ Playlist maker test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function testOtherWindows() {
+      updateTestStatus('other-windows-status', 'running');
+      logTest('Testing other windows...', 'info');
+
+      try {
+        const app = window.app;
+        const windowsToTest = [
+          { name: 'newsroom', component: 'newsroomWindow' },
+          { name: 'members', component: 'membersWindow' },
+          { name: 'events', component: 'eventsWindow' },
+          { name: 'social', component: 'socialWindow' },
+          { name: 'vacation', component: 'vacationWindow' },
+          { name: 'guestbook', component: 'guestbookWindow' }
+        ];
+
+        let successCount = 0;
+
+        for (const windowTest of windowsToTest) {
+          try {
+            if (app[windowTest.component]) {
+              const window = app[windowTest.component].create();
+              if (window) {
+                successCount++;
+                // Clean up after a short delay
+                setTimeout(() => {
+                  app.windowManager.closeWindow(window);
+                }, 2000);
+              }
+            }
+          } catch (error) {
+            logTest(`⚠️ ${windowTest.name} window test failed: ${error.message}`, 'warning');
+          }
+        }
+
+        if (successCount >= windowsToTest.length / 2) {
+          updateTestStatus('other-windows-status', 'pass');
+          logTest(`✅ Other windows functional (${successCount}/${windowsToTest.length})`, 'success');
+          return true;
+        } else {
+          updateTestStatus('other-windows-status', 'warning');
+          logTest(`⚠️ Some windows may have issues (${successCount}/${windowsToTest.length})`, 'warning');
+          return false;
+        }
+      } catch (error) {
+        updateTestStatus('other-windows-status', 'fail');
+        logTest(`❌ Other windows test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    // Data & Storage Tests
+    async function testLocalStorage() {
+      updateTestStatus('storage-status', 'running');
+      logTest('Testing localStorage...', 'info');
+
+      try {
+        // Test localStorage availability
+        if (typeof Storage === 'undefined') {
+          throw new Error('localStorage not available');
+        }
+
+        // Test write/read
+        const testKey = 'e2e-test-key';
+        const testValue = 'e2e-test-value';
+
+        localStorage.setItem(testKey, testValue);
+        const retrievedValue = localStorage.getItem(testKey);
+
+        if (retrievedValue !== testValue) {
+          throw new Error('localStorage read/write failed');
+        }
+
+        // Clean up
+        localStorage.removeItem(testKey);
+
+        updateTestStatus('storage-status', 'pass');
+        logTest('✅ localStorage is functional', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('storage-status', 'fail');
+        logTest(`❌ localStorage test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function testStationData() {
+      updateTestStatus('station-data-status', 'running');
+      logTest('Testing station data management...', 'info');
+
+      try {
+        // Test station data structure
+        if (!window.stationData || !Array.isArray(window.stationData)) {
+          throw new Error('Station data not properly loaded');
+        }
+
+        const stations = window.stationData;
+
+        // Test data persistence
+        const originalStations = JSON.stringify(stations);
+        localStorage.setItem('radioStations', originalStations);
+
+        const savedStations = localStorage.getItem('radioStations');
+        if (!savedStations) {
+          throw new Error('Station data persistence failed');
+        }
+
+        const parsedStations = JSON.parse(savedStations);
+        if (!Array.isArray(parsedStations)) {
+          throw new Error('Station data parsing failed');
+        }
+
+        updateTestStatus('station-data-status', 'pass');
+        logTest('✅ Station data management functional', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('station-data-status', 'fail');
+        logTest(`❌ Station data test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    // User Interaction Tests
+    async function testDockInteractions() {
+      updateTestStatus('dock-status', 'running');
+      logTest('Testing dock interactions...', 'info');
+
+      try {
+        const dockItems = document.getElementById('dock-items');
+        if (!dockItems) {
+          throw new Error('Dock items container not found');
+        }
+
+        const dockButtons = dockItems.querySelectorAll('button');
+        if (dockButtons.length === 0) {
+          throw new Error('No dock buttons found');
+        }
+
+        // Test clicking a dock button (admin panel)
+        const adminButton = document.getElementById('dock-admin');
+        if (adminButton) {
+          adminButton.click();
+          await sleep(1000);
+
+          // Check if admin window was created
+          const adminWindow = document.getElementById('admin-panel');
+          if (adminWindow) {
+            logTest('✅ Dock button interaction successful', 'success');
+            // Clean up
+            setTimeout(() => {
+              const app = window.app;
+              if (app && app.windowManager) {
+                app.windowManager.closeWindow(adminWindow);
+              }
+            }, 1000);
+          }
+        }
+
+        updateTestStatus('dock-status', 'pass');
+        logTest(`✅ Dock interactions functional (${dockButtons.length} buttons)`, 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('dock-status', 'fail');
+        logTest(`❌ Dock interactions test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    async function testMenuFunctions() {
+      updateTestStatus('menu-status', 'running');
+      logTest('Testing menu functions...', 'info');
+
+      try {
+        const menuButton = document.getElementById('menu-button');
+        const loginButton = document.getElementById('login-button');
+
+        if (!menuButton || !loginButton) {
+          throw new Error('Menu buttons not found');
+        }
+
+        // Test menu button click (should not throw error)
+        menuButton.click();
+        await sleep(200);
+
+        // Test login button click (should not throw error)
+        loginButton.click();
+        await sleep(200);
+
+        updateTestStatus('menu-status', 'pass');
+        logTest('✅ Menu functions operational', 'success');
+        return true;
+      } catch (error) {
+        updateTestStatus('menu-status', 'fail');
+        logTest(`❌ Menu functions test failed: ${error.message}`, 'error');
+        return false;
+      }
+    }
+
+    // Main Test Runners
+    async function runAllTests() {
+      if (testConfig.isRunning) {
+        logTest('⚠️ Tests already running', 'warning');
+        return;
+      }
+
+      testConfig.isRunning = true;
+      testConfig.startTime = Date.now();
+      testConfig.passedTests = 0;
+      testConfig.failedTests = 0;
+      testConfig.totalTests = 18; // Update this if you add more tests
+
+      logTest('🚀 Starting comprehensive E2E test suite...', 'info');
+
+      const runAllBtn = document.getElementById('run-all-btn');
+      const quickTestBtn = document.getElementById('quick-test-btn');
+      runAllBtn.disabled = true;
+      quickTestBtn.disabled = true;
+
+      try {
+        // Infrastructure Tests
+        await testDOMStructure();
+        await sleep(200);
+        await testScriptLoading();
+        await sleep(200);
+        await testAppInitialization();
+        await sleep(500);
+
+        // Window System Tests
+        await testWindowManager();
+        await sleep(200);
+        await testWindowCreation();
+        await sleep(500);
+        await testWindowControls();
+        await sleep(500);
+
+        // Audio System Tests
+        await testYouTubePlayer();
+        await sleep(200);
+        await testStationLoading();
+        await sleep(200);
+        await testAudioControls();
+        await sleep(500);
+
+        // Background System Tests
+        await testBackgroundManager();
+        await sleep(200);
+        await testVideoLoading();
+        await sleep(500);
+
+        // Application Window Tests
+        await testRadioWindow();
+        await sleep(500);
+        await testAdminPanel();
+        await sleep(1000);
+        await testMixtapesWindow();
+        await sleep(1000);
+        await testPlaylistMaker();
+        await sleep(1000);
+        await testOtherWindows();
+        await sleep(2000);
+
+        // Data & Storage Tests
+        await testLocalStorage();
+        await sleep(200);
+        await testStationData();
+        await sleep(500);
+
+        // User Interaction Tests
+        await testDockInteractions();
+        await sleep(1000);
+        await testMenuFunctions();
+
+        const endTime = Date.now();
+        const duration = ((endTime - testConfig.startTime) / 1000).toFixed(2);
+
+        logTest(`🎉 Test suite completed in ${duration}s`, 'success');
+        logTest(`📊 Results: ${testConfig.passedTests} passed, ${testConfig.failedTests} failed`, 'info');
+
+      } catch (error) {
+        logTest(`❌ Test suite error: ${error.message}`, 'error');
+      } finally {
+        testConfig.isRunning = false;
+        runAllBtn.disabled = false;
+        quickTestBtn.disabled = false;
+      }
+    }
+
+    async function runQuickTests() {
+      if (testConfig.isRunning) {
+        logTest('⚠️ Tests already running', 'warning');
+        return;
+      }
+
+      testConfig.isRunning = true;
+      testConfig.startTime = Date.now();
+      testConfig.passedTests = 0;
+      testConfig.failedTests = 0;
+      testConfig.totalTests = 8; // Quick test count
+
+      logTest('⚡ Starting quick test suite...', 'info');
+
+      const runAllBtn = document.getElementById('run-all-btn');
+      const quickTestBtn = document.getElementById('quick-test-btn');
+      runAllBtn.disabled = true;
+      quickTestBtn.disabled = true;
+
+      try {
+        // Essential tests only
+        await testDOMStructure();
+        await sleep(200);
+        await testScriptLoading();
+        await sleep(200);
+        await testAppInitialization();
+        await sleep(300);
+        await testWindowManager();
+        await sleep(200);
+        await testYouTubePlayer();
+        await sleep(200);
+        await testBackgroundManager();
+        await sleep(200);
+        await testRadioWindow();
+        await sleep(300);
+        await testLocalStorage();
+
+        const endTime = Date.now();
+        const duration = ((endTime - testConfig.startTime) / 1000).toFixed(2);
+
+        logTest(`⚡ Quick test completed in ${duration}s`, 'success');
+        logTest(`📊 Results: ${testConfig.passedTests} passed, ${testConfig.failedTests} failed`, 'info');
+
+      } catch (error) {
+        logTest(`❌ Quick test error: ${error.message}`, 'error');
+      } finally {
+        testConfig.isRunning = false;
+        runAllBtn.disabled = false;
+        quickTestBtn.disabled = false;
+      }
+    }
+
+    function clearTestResults() {
+      // Reset all test statuses
+      const testStatuses = document.querySelectorAll('.test-status');
+      testStatuses.forEach(status => {
+        status.textContent = '⏳';
+        status.className = 'test-status pending';
+      });
+
+      // Clear test log
+      document.getElementById('test-log').innerHTML = '<div class="log-entry">Test log cleared...</div>';
+
+      // Reset progress
+      document.getElementById('progress-bar').style.width = '0%';
+      document.getElementById('test-summary').textContent = 'Ready to test';
+
+      // Reset config
+      testConfig.passedTests = 0;
+      testConfig.failedTests = 0;
+      testConfig.testResults = {};
+
+      logTest('🗑️ Test results cleared', 'info');
+    }
+
+    function exportTestResults() {
+      const results = {
+        timestamp: new Date().toISOString(),
+        summary: {
+          total: testConfig.totalTests,
+          passed: testConfig.passedTests,
+          failed: testConfig.failedTests,
+          duration: testConfig.startTime ? (Date.now() - testConfig.startTime) / 1000 : 0
+        },
+        tests: testConfig.testResults,
+        userAgent: navigator.userAgent,
+        url: window.location.href
+      };
+
+      const dataStr = JSON.stringify(results, null, 2);
+      const dataBlob = new Blob([dataStr], { type: 'application/json' });
+
+      const link = document.createElement('a');
+      link.href = URL.createObjectURL(dataBlob);
+      link.download = `fait-radio-test-results-${new Date().toISOString().slice(0, 19).replace(/:/g, '-')}.json`;
+      link.click();
+
+      logTest('📊 Test results exported', 'info');
+    }
+
+    function toggleTestOverlay() {
+      const overlay = document.getElementById('test-overlay');
+      overlay.classList.toggle('minimized');
+    }
+
+    // Initialize test suite when page loads
+    document.addEventListener('DOMContentLoaded', function() {
+      logTest('🧪 E2E Test Suite initialized', 'info');
+      logTest('Click "Run All Tests" for comprehensive testing or "Quick Test" for essential checks', 'info');
+
+      // Auto-run quick tests after app initialization
+      setTimeout(() => {
+        if (window.app && !testConfig.isRunning) {
+          logTest('🔄 Auto-running quick tests...', 'info');
+          runQuickTests();
+        }
+      }, 3000);
+    });
+
+    // Capture and log console errors
+    const originalConsoleError = console.error;
+    console.error = function(...args) {
+      logTest(`Console Error: ${args.join(' ')}`, 'error');
+      originalConsoleError.apply(console, args);
+    };
+
+    // Capture unhandled errors
+    window.addEventListener('error', function(event) {
+      logTest(`Unhandled Error: ${event.error?.message || event.message}`, 'error');
+    });
+
+    // Capture unhandled promise rejections
+    window.addEventListener('unhandledrejection', function(event) {
+      logTest(`Unhandled Promise Rejection: ${event.reason}`, 'error');
+    });
+  </script>
+</body>
+</html>

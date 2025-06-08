@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAIT Radio - Minimal Test</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .test-output {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.9);
+      color: #00FFFF;
+      padding: 20px;
+      border: 2px solid #00FFFF;
+      border-radius: 8px;
+      font-family: monospace;
+      font-size: 12px;
+      max-width: 400px;
+      max-height: 80vh;
+      overflow-y: auto;
+      z-index: 9999;
+    }
+    .success { color: #39FF14; }
+    .error { color: #ff1744; }
+    .warning { color: #ffa000; }
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    <div id="desktop">
+      <!-- Top bar -->
+      <header id="top-bar">
+        <ul id="menu">
+          <li><button id="menu-button"><img src="img/menu-icon.png" alt="Menu"></button></li>
+          <li><button id="login-button">Become a member</button></li>
+        </ul>
+        <aside id="time-display">
+          <div id="date">Sat 7 Jun 1997</div>
+          <div id="clock"><img src="img/clock-icon.png" alt="Clock"><span>04:22</span></div>
+        </aside>
+      </header>
+
+      <!-- Main content area -->
+      <section id="content-area">
+        <!-- Windows will be dynamically added here -->
+      </section>
+
+      <!-- Dock/taskbar -->
+      <div id="dock-container">
+        <div id="dock">
+          <ul id="dock-items">
+            <!-- Dock items will be added here -->
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <div class="test-output" id="test-output">
+    <h3>🔧 Minimal Test Output</h3>
+    <div id="output-content">Starting tests...</div>
+  </div>
+
+  <!-- Load scripts one by one with error handling -->
+  <script>
+    let testOutput = [];
+    
+    function addOutput(message, type = 'info') {
+      testOutput.push(`<div class="${type}">${new Date().toLocaleTimeString()}: ${message}</div>`);
+      document.getElementById('output-content').innerHTML = testOutput.join('');
+    }
+    
+    function loadScript(src) {
+      return new Promise((resolve, reject) => {
+        const script = document.createElement('script');
+        script.src = src;
+        script.onload = () => {
+          addOutput(`✅ Loaded: ${src}`, 'success');
+          resolve();
+        };
+        script.onerror = () => {
+          addOutput(`❌ Failed to load: ${src}`, 'error');
+          reject(new Error(`Failed to load ${src}`));
+        };
+        document.head.appendChild(script);
+      });
+    }
+    
+    async function runTests() {
+      addOutput('🔍 Starting minimal test...', 'info');
+      
+      // Test 1: Check DOM elements
+      const requiredElements = ['content-area', 'dock-items', 'clock', 'desktop', 'top-bar'];
+      requiredElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+          addOutput(`✅ DOM element found: #${id}`, 'success');
+        } else {
+          addOutput(`❌ DOM element missing: #${id}`, 'error');
+        }
+      });
+      
+      // Test 2: Load scripts sequentially
+      const scripts = [
+        'js/stations.js',
+        'js/window-manager.js',
+        'js/youtube-player.js',
+        'js/background-manager.js',
+        'js/radio-window.js',
+        'js/admin-panel.js'
+      ];
+      
+      for (const script of scripts) {
+        try {
+          await loadScript(script);
+          
+          // Check if the expected class was exported
+          const className = script.split('/')[1].split('.')[0];
+          const expectedClasses = {
+            'stations': 'stationData',
+            'window-manager': 'WindowManager',
+            'youtube-player': 'YouTubePlayer',
+            'background-manager': 'BackgroundManager',
+            'radio-window': 'RadioWindow',
+            'admin-panel': 'AdminPanel'
+          };
+          
+          const expectedClass = expectedClasses[className];
+          if (expectedClass && window[expectedClass]) {
+            addOutput(`✅ Class exported: ${expectedClass}`, 'success');
+          } else if (expectedClass) {
+            addOutput(`❌ Class not exported: ${expectedClass}`, 'error');
+          }
+          
+        } catch (error) {
+          addOutput(`❌ Script error: ${error.message}`, 'error');
+          break;
+        }
+      }
+      
+      // Test 3: Try to create basic app
+      try {
+        addOutput('🔍 Testing basic app creation...', 'info');
+        
+        if (window.WindowManager) {
+          const wm = new WindowManager();
+          addOutput('✅ WindowManager created', 'success');
+          
+          // Try to create a simple window
+          const testWindow = wm.createWindow({
+            id: 'test-window',
+            title: 'Test Window',
+            content: '<p>Test content</p>',
+            width: 300,
+            height: 200
+          });
+          
+          if (testWindow) {
+            addOutput('✅ Test window created', 'success');
+            setTimeout(() => {
+              wm.closeWindow(testWindow);
+              addOutput('✅ Test window closed', 'success');
+            }, 2000);
+          } else {
+            addOutput('❌ Test window creation failed', 'error');
+          }
+        } else {
+          addOutput('❌ WindowManager not available', 'error');
+        }
+        
+      } catch (error) {
+        addOutput(`❌ App creation error: ${error.message}`, 'error');
+      }
+      
+      // Test 4: Check for console errors
+      setTimeout(() => {
+        addOutput('🔍 Test completed. Check console for additional errors.', 'info');
+      }, 3000);
+    }
+    
+    // Start tests when DOM is ready
+    document.addEventListener('DOMContentLoaded', runTests);
+    
+    // Capture console errors
+    const originalError = console.error;
+    console.error = function(...args) {
+      addOutput(`Console Error: ${args.join(' ')}`, 'error');
+      originalError.apply(console, args);
+    };
+  </script>
+</body>
+</html>

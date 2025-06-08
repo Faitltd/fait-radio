@@ -1,0 +1,48 @@
+{
+  "name": "fait-radio",
+  "version": "1.0.0",
+  "description": "FAIT Radio - A synthwave-themed web radio station with YouTube integration",
+  "type": "module",
+  "main": "index.html",
+  "scripts": {
+    "start": "python3 -m http.server 8000",
+    "test": "node run-tests.js",
+    "serve": "python3 -m http.server 8000",
+    "dev": "python3 -m http.server 8000",
+    "build": "node build.js",
+    "deploy": "npm run build && npm run deploy:netlify",
+    "deploy:netlify": "netlify deploy --prod --dir=dist",
+    "deploy:vercel": "vercel --prod",
+    "preview": "npm run build && python3 -m http.server 8000 --directory dist"
+  },
+  "keywords": [
+    "radio",
+    "synthwave",
+    "youtube",
+    "music",
+    "web-app",
+    "retro",
+    "80s"
+  ],
+  "author": "FAIT Team",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Faitltd/fait-radio.git"
+  },
+  "bugs": {
+    "url": "https://github.com/Faitltd/fait-radio/issues"
+  },
+  "homepage": "https://itsfait.com/radio",
+  "devDependencies": {
+    "http-server": "^14.1.1"
+  },
+  "engines": {
+    "node": ">=14.0.0"
+  },
+  "browserslist": [
+    "> 1%",
+    "last 2 versions",
+    "not dead"
+  ]
+}

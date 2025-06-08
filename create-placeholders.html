@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Create Placeholder Images</title>
+</head>
+<body>
+    <canvas id="canvas" width="32" height="32"></canvas>
+    <script>
+        const canvas = document.getElementById('canvas');
+        const ctx = canvas.getContext('2d');
+        
+        function createIcon(text, filename) {
+            // Clear canvas
+            ctx.fillStyle = '#000000';
+            ctx.fillRect(0, 0, 32, 32);
+            
+            // Draw text
+            ctx.fillStyle = '#ffffff';
+            ctx.font = '12px Arial';
+            ctx.textAlign = 'center';
+            ctx.fillText(text, 16, 20);
+            
+            // Create download link
+            canvas.toBlob(function(blob) {
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = filename;
+                a.click();
+                URL.revokeObjectURL(url);
+            });
+        }
+        
+        // Create icons
+        setTimeout(() => createIcon('FM', 'fm.png'), 100);
+        setTimeout(() => createIcon('NEWS', 'newsroom.png'), 200);
+        setTimeout(() => createIcon('MIX', 'mixtapes.png'), 300);
+        setTimeout(() => createIcon('MEM', 'members.png'), 400);
+        setTimeout(() => createIcon('EVT', 'events.png'), 500);
+        setTimeout(() => createIcon('IG', 'instagram.png'), 600);
+        setTimeout(() => createIcon('VAC', 'vacation.png'), 700);
+        setTimeout(() => createIcon('GB', 'guestbook.png'), 800);
+        setTimeout(() => createIcon('SET', 'settings.png'), 900);
+    </script>
+</body>
+</html>

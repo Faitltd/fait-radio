@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAIT RADIO - 1987 Style</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/retro-game-style.css">
+</head>
+<body>
+  <div id="app-container">
+    <div id="desktop">
+      <!-- Header with game title and time -->
+      <header id="top-bar">
+        <div class="game-title">FAIT RADIO</div>
+        <aside id="time-display">
+          <div id="date">1987</div>
+          <div id="clock">04:22</div>
+        </aside>
+      </header>
+
+      <!-- Main game screen area -->
+      <section id="content-area">
+        <!-- Full-screen game windows will be dynamically added here -->
+      </section>
+
+      <!-- Arcade Control Panel -->
+      <div id="dock-container">
+        <div id="dock">
+          <ul id="dock-items">
+            <li><button onclick="openRadio()">RADIO</button></li>
+            <li><button onclick="openMixtapes()">TAPES</button></li>
+            <li><button onclick="openAdmin()">ADMIN</button></li>
+            <li><button onclick="openPlaylist()">MAKER</button></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Load scripts in correct order -->
+  <script src="js/stations.js"></script>
+  <script src="js/window-manager.js"></script>
+  <script src="js/youtube-player.js"></script>
+  <script src="js/background-manager.js"></script>
+  <script src="js/radio-window.js"></script>
+  <script src="js/admin-panel.js"></script>
+  <script src="js/mixtapes-window.js"></script>
+  <script src="js/playlist-maker-window.js"></script>
+
+  <script>
+    let windowManager, youtubePlayer, backgroundManager;
+    let radioWindow, adminPanel, mixtapesWindow, playlistMaker;
+    let currentWindow = null;
+
+    function initializeComponents() {
+      if (!windowManager) {
+        windowManager = new WindowManager();
+        console.log('WindowManager initialized');
+      }
+
+      if (!youtubePlayer) {
+        youtubePlayer = new YouTubePlayer();
+        console.log('YouTubePlayer initialized');
+      }
+
+      if (!backgroundManager) {
+        backgroundManager = new BackgroundManager();
+        console.log('BackgroundManager initialized');
+      }
+    }
+
+    function closeCurrentWindow() {
+      if (currentWindow && currentWindow.close) {
+        currentWindow.close();
+      }
+      currentWindow = null;
+    }
+
+    function openRadio() {
+      console.log('🎵 Opening Radio...');
+      initializeComponents();
+      closeCurrentWindow();
+
+      if (!radioWindow) {
+        radioWindow = new RadioWindow(windowManager, youtubePlayer, backgroundManager);
+      }
+
+      const window = radioWindow.create();
+      if (window) {
+        currentWindow = radioWindow;
+        console.log('Radio opened successfully');
+      }
+    }
+
+    function openMixtapes() {
+      console.log('🎵 Opening Mixtapes...');
+      initializeComponents();
+      closeCurrentWindow();
+
+      if (!mixtapesWindow) {
+        mixtapesWindow = new MixtapesWindow(windowManager, youtubePlayer, backgroundManager);
+      }
+
+      const window = mixtapesWindow.create();
+      if (window) {
+        currentWindow = mixtapesWindow;
+        console.log('Mixtapes opened successfully');
+      }
+    }
+
+    function openAdmin() {
+      console.log('🎛️ Opening Admin...');
+      initializeComponents();
+      closeCurrentWindow();
+
+      if (!adminPanel) {
+        adminPanel = new AdminPanel(windowManager);
+      }
+
+      const window = adminPanel.create();
+      if (window) {
+        currentWindow = adminPanel;
+        console.log('Admin panel opened successfully');
+      }
+    }
+
+    function openPlaylist() {
+      console.log('🎵 Opening Playlist Maker...');
+      initializeComponents();
+      closeCurrentWindow();
+
+      if (!playlistMaker) {
+        playlistMaker = new PlaylistMakerWindow(windowManager, youtubePlayer, backgroundManager);
+      }
+
+      const window = playlistMaker.create();
+      if (window) {
+        currentWindow = playlistMaker;
+        console.log('Playlist maker opened successfully');
+      }
+    }
+
+    // Update clock
+    function updateClock() {
+      const now = new Date();
+      const timeString = now.toLocaleTimeString('en-US', { 
+        hour12: false, 
+        hour: '2-digit', 
+        minute: '2-digit' 
+      });
+      
+      const clockElement = document.getElementById('clock');
+      if (clockElement) {
+        clockElement.textContent = timeString;
+      }
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', () => {
+      console.log('🎮 FAIT RADIO - 1987 Style Loaded');
+      updateClock();
+      setInterval(updateClock, 1000);
+      
+      // Auto-open radio on load
+      setTimeout(() => {
+        openRadio();
+      }, 1000);
+    });
+
+    // Handle window resize
+    window.addEventListener('resize', () => {
+      if (currentWindow && currentWindow.windowElement) {
+        currentWindow.windowElement.style.width = window.innerWidth + 'px';
+        currentWindow.windowElement.style.height = window.innerHeight + 'px';
+      }
+    });
+
+    // Keyboard shortcuts
+    document.addEventListener('keydown', (e) => {
+      if (e.altKey) {
+        switch (e.key) {
+          case '1':
+            e.preventDefault();
+            openRadio();
+            break;
+          case '2':
+            e.preventDefault();
+            openMixtapes();
+            break;
+          case '3':
+            e.preventDefault();
+            openAdmin();
+            break;
+          case '4':
+            e.preventDefault();
+            openPlaylist();
+            break;
+        }
+      }
+    });
+  </script>
+</body>
+</html>

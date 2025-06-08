@@ -1,0 +1,830 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAIT Radio - 80's Interface</title>
+  <link rel="stylesheet" href="css/radio-interface.css">
+</head>
+<body>
+  <div class="radio-unit">
+    <!-- LED Display -->
+    <div class="led-display">
+      <div class="station-name" id="station-name">FAIT FM</div>
+      <div class="station-description" id="station-description">Select a station to start listening</div>
+      <div class="status-bar" id="status-bar">READY</div>
+    </div>
+
+    <!-- Speakers -->
+    <div class="speakers">
+      <div class="speaker" id="speaker-left">
+        <!-- Generate speaker holes -->
+      </div>
+      <div class="speaker" id="speaker-right">
+        <!-- Generate speaker holes -->
+      </div>
+    </div>
+
+    <!-- Control Panel -->
+    <div class="control-panel">
+      <button class="power-button" id="power-btn">
+        <span id="power-icon">▶</span>
+      </button>
+
+      <div class="volume-control">
+        <div class="volume-label">Volume</div>
+        <div class="volume-slider-container">
+          <div class="volume-track">
+            <div class="volume-fill" id="volume-fill"></div>
+          </div>
+          <input type="range" class="volume-slider" id="volume-slider"
+                 min="0" max="100" value="50">
+        </div>
+        <div class="volume-display" id="volume-display">50</div>
+      </div>
+    </div>
+
+    <!-- Tuner Section -->
+    <div class="tuner">
+      <div class="frequency-display" id="frequency-display">88.7 FM</div>
+      
+      <div class="station-selector">
+        <div class="station-buttons" id="station-buttons">
+          <!-- Station buttons will be generated here -->
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Panel -->
+    <div class="bottom-panel">
+      <div class="brand-label">FAIT</div>
+      
+      <div class="mode-switches">
+        <div class="mode-switch">
+          <div class="switch" id="auto-switch">
+            <div class="switch-handle"></div>
+          </div>
+          <div class="switch-label">Auto</div>
+        </div>
+        
+        <div class="mode-switch">
+          <div class="switch" id="stereo-switch">
+            <div class="switch-handle"></div>
+          </div>
+          <div class="switch-label">Stereo</div>
+        </div>
+        
+        <div class="mode-switch">
+          <div class="switch" id="bass-switch">
+            <div class="switch-handle"></div>
+          </div>
+          <div class="switch-label">Bass</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Admin Toggle Button -->
+  <button class="admin-toggle" id="admin-toggle">⚙️</button>
+
+  <!-- Admin Panel -->
+  <div class="admin-panel" id="admin-panel">
+    <div class="admin-header">
+      <h2 class="admin-title">Station Manager</h2>
+      <button class="close-admin" id="close-admin">×</button>
+    </div>
+
+    <!-- Station List -->
+    <div class="admin-section">
+      <h3>Current Stations</h3>
+      <div class="station-list" id="station-list">
+        <!-- Station items will be generated here -->
+      </div>
+    </div>
+
+    <!-- Add/Edit Station Form -->
+    <div class="admin-section">
+      <h3 id="form-title">Add New Station</h3>
+
+      <div class="form-group">
+        <label for="station-name-input">Station Name:</label>
+        <input type="text" id="station-name-input" placeholder="e.g., Synthwave FM" maxlength="50">
+        <small>Give your station a catchy name</small>
+      </div>
+
+      <div class="form-group">
+        <label for="station-description-input">Description:</label>
+        <input type="text" id="station-description-input" placeholder="e.g., The best synthwave tracks" maxlength="100">
+        <small>Describe what makes this station special</small>
+      </div>
+
+      <div class="form-group">
+        <label for="station-youtube-input">YouTube Content:</label>
+        <input type="text" id="station-youtube-input" placeholder="Video ID, Playlist ID, or full YouTube URL">
+        <small>
+          <strong>Supported formats:</strong><br>
+          • Video ID: <code>dQw4w9WgXcQ</code><br>
+          • Playlist ID: <code>PLrAl6rYAS4Z7hWOgOgKjKW8VaOtMnKGWz</code><br>
+          • Full URL: <code>https://youtube.com/watch?v=VIDEO_ID</code>
+        </small>
+      </div>
+
+      <div class="form-group">
+        <label for="station-color-input">Theme Color:</label>
+        <input type="color" id="station-color-input" value="#FF1493">
+        <small>Choose a color that represents your station's vibe</small>
+      </div>
+
+      <div class="admin-buttons">
+        <button class="admin-btn primary" id="save-station-btn">Save Station</button>
+        <button class="admin-btn test" id="test-embed-btn">Test Embed</button>
+        <button class="admin-btn secondary" id="cancel-edit-btn" style="display: none;">Cancel Edit</button>
+        <button class="admin-btn secondary" id="clear-form-btn">Clear Form</button>
+      </div>
+
+      <div class="test-results" id="test-results">
+        <h4>Test Results</h4>
+        <div id="test-output"></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Hidden YouTube container -->
+  <div id="youtube-container" style="position: absolute; top: -1000px; left: -1000px;"></div>
+
+  <!-- Load scripts -->
+  <script src="js/stations.js"></script>
+  <script src="js/youtube-player.js"></script>
+
+  <script>
+    class RadioInterface {
+      constructor() {
+        this.youtubePlayer = null;
+        this.currentStation = null;
+        this.isPlaying = false;
+        this.volume = 50;
+        this.currentStationIndex = 0;
+        this.editingStationIndex = null;
+        this.stations = [];
+
+        this.init();
+      }
+
+      async init() {
+        console.log('🎵 Initializing FAIT Radio Interface...');
+        
+        // Initialize YouTube player
+        this.youtubePlayer = new YouTubePlayer();
+        
+        // Generate speaker holes
+        this.generateSpeakerHoles();
+        
+        // Generate station buttons
+        this.generateStationButtons();
+        
+        // Setup event listeners
+        this.setupEventListeners();
+        
+        // Setup YouTube player events
+        this.setupYouTubeEvents();
+        
+        // Load stations data
+        this.loadStationsData();
+
+        // Setup admin panel
+        this.setupAdminPanel();
+
+        // Load default station
+        this.loadDefaultStation();
+
+        console.log('✅ Radio interface initialized');
+      }
+
+      generateSpeakerHoles() {
+        const speakers = document.querySelectorAll('.speaker');
+        speakers.forEach(speaker => {
+          for (let i = 0; i < 48; i++) {
+            const hole = document.createElement('div');
+            hole.className = 'speaker-hole';
+            speaker.appendChild(hole);
+          }
+        });
+      }
+
+      generateStationButtons() {
+        const container = document.getElementById('station-buttons');
+        
+        if (!window.stationData || !Array.isArray(window.stationData)) {
+          console.error('Station data not available');
+          return;
+        }
+
+        window.stationData.forEach((station, index) => {
+          const button = document.createElement('button');
+          button.className = 'station-btn';
+          button.textContent = station.name;
+          button.dataset.stationId = station.id;
+          button.dataset.index = index;
+          
+          button.addEventListener('click', () => {
+            this.selectStation(index);
+          });
+          
+          container.appendChild(button);
+        });
+      }
+
+      setupEventListeners() {
+        // Power button
+        document.getElementById('power-btn').addEventListener('click', () => {
+          this.togglePlayback();
+        });
+
+        // Volume slider
+        const volumeSlider = document.getElementById('volume-slider');
+        volumeSlider.addEventListener('input', (e) => {
+          this.setVolume(parseInt(e.target.value));
+        });
+
+        // Mode switches
+        document.getElementById('auto-switch').addEventListener('click', () => {
+          this.toggleSwitch('auto-switch');
+        });
+
+        document.getElementById('stereo-switch').addEventListener('click', () => {
+          this.toggleSwitch('stereo-switch');
+        });
+
+        document.getElementById('bass-switch').addEventListener('click', () => {
+          this.toggleSwitch('bass-switch');
+        });
+
+        // Keyboard shortcuts
+        document.addEventListener('keydown', (e) => {
+          switch(e.key) {
+            case ' ':
+              e.preventDefault();
+              this.togglePlayback();
+              break;
+            case 'ArrowUp':
+              e.preventDefault();
+              this.nextStation();
+              break;
+            case 'ArrowDown':
+              e.preventDefault();
+              this.previousStation();
+              break;
+            case 'ArrowLeft':
+              e.preventDefault();
+              this.adjustVolume(-5);
+              break;
+            case 'ArrowRight':
+              e.preventDefault();
+              this.adjustVolume(5);
+              break;
+          }
+        });
+      }
+
+      setupYouTubeEvents() {
+        this.youtubePlayer.addEventListener('stationLoaded', (event) => {
+          console.log('✅ Station loaded:', event.station?.name);
+          this.updateStatus('LOADED');
+        });
+
+        this.youtubePlayer.addEventListener('play', () => {
+          console.log('▶️ Playback started');
+          this.isPlaying = true;
+          this.updatePowerButton();
+          this.updateStatus('PLAYING');
+        });
+
+        this.youtubePlayer.addEventListener('pause', () => {
+          console.log('⏸️ Playback paused');
+          this.isPlaying = false;
+          this.updatePowerButton();
+          this.updateStatus('PAUSED');
+        });
+
+        this.youtubePlayer.addEventListener('error', (event) => {
+          console.error('❌ YouTube error:', event);
+          this.updateStatus('ERROR - TRYING NEXT');
+          // Auto-try next station on error
+          setTimeout(() => {
+            this.nextStation();
+          }, 2000);
+        });
+      }
+
+      loadDefaultStation() {
+        if (window.stationData && window.stationData.length > 0) {
+          this.selectStation(0);
+        }
+      }
+
+      selectStation(index) {
+        if (!window.stationData || index >= window.stationData.length) return;
+        
+        const station = window.stationData[index];
+        this.currentStation = station;
+        this.currentStationIndex = index;
+        
+        console.log('🎵 Selecting station:', station.name);
+        
+        // Update UI
+        this.updateStationDisplay(station);
+        this.updateStationButtons(index);
+        this.updateFrequency(station);
+        this.updateStatus('LOADING...');
+        
+        // Load in YouTube player
+        if (this.youtubePlayer && this.youtubePlayer.isReady) {
+          this.youtubePlayer.loadStation(station);
+        } else {
+          this.youtubePlayer.addEventListener('ready', () => {
+            this.youtubePlayer.loadStation(station);
+          });
+        }
+      }
+
+      togglePlayback() {
+        if (!this.currentStation) {
+          this.updateStatus('SELECT STATION FIRST');
+          return;
+        }
+
+        if (this.isPlaying) {
+          this.youtubePlayer.pause();
+        } else {
+          this.youtubePlayer.play();
+        }
+      }
+
+      nextStation() {
+        const nextIndex = (this.currentStationIndex + 1) % window.stationData.length;
+        this.selectStation(nextIndex);
+      }
+
+      previousStation() {
+        const prevIndex = this.currentStationIndex === 0 ? 
+          window.stationData.length - 1 : this.currentStationIndex - 1;
+        this.selectStation(prevIndex);
+      }
+
+
+
+      adjustVolume(delta) {
+        const newVolume = Math.max(0, Math.min(100, this.volume + delta));
+        this.setVolume(newVolume);
+      }
+
+      setVolume(volume) {
+        this.volume = volume;
+        
+        // Update visual indicator
+        const indicator = document.getElementById('volume-indicator');
+        const rotation = (volume / 100) * 360;
+        indicator.style.transform = `translateX(-50%) rotate(${rotation}deg)`;
+        
+        // Update YouTube player
+        if (this.youtubePlayer) {
+          this.youtubePlayer.setVolume(volume);
+        }
+      }
+
+      toggleSwitch(switchId) {
+        const switchElement = document.getElementById(switchId);
+        switchElement.classList.toggle('active');
+      }
+
+      updateStationDisplay(station) {
+        document.getElementById('station-name').textContent = station.name;
+        document.getElementById('station-description').textContent = station.description;
+      }
+
+      updateStationButtons(activeIndex) {
+        const buttons = document.querySelectorAll('.station-btn');
+        buttons.forEach((btn, index) => {
+          btn.classList.toggle('active', index === activeIndex);
+        });
+      }
+
+      updateFrequency(station) {
+        // Generate a fake FM frequency based on station
+        const baseFreq = 88.1;
+        const freq = (baseFreq + (station.id.length * 0.3)).toFixed(1);
+        document.getElementById('frequency-display').textContent = `${freq} FM`;
+      }
+
+      updatePowerButton() {
+        const powerBtn = document.getElementById('power-btn');
+        const powerIcon = document.getElementById('power-icon');
+        
+        if (this.isPlaying) {
+          powerBtn.classList.add('playing');
+          powerIcon.textContent = '⏸';
+        } else {
+          powerBtn.classList.remove('playing');
+          powerIcon.textContent = '▶';
+        }
+      }
+
+      updateStatus(status) {
+        document.getElementById('status-bar').textContent = status;
+      }
+
+      // Admin Panel Methods
+      loadStationsData() {
+        // Load from localStorage or use default
+        const savedStations = localStorage.getItem('radioStations');
+        if (savedStations) {
+          try {
+            this.stations = JSON.parse(savedStations);
+          } catch (error) {
+            console.error('Error loading saved stations:', error);
+            this.stations = [...window.stationData];
+          }
+        } else {
+          this.stations = [...window.stationData];
+        }
+
+        // Update global station data
+        window.stationData = this.stations;
+      }
+
+      saveStationsData() {
+        localStorage.setItem('radioStations', JSON.stringify(this.stations));
+        window.stationData = this.stations;
+
+        // Regenerate station buttons
+        this.generateStationButtons();
+
+        // Update station list in admin panel
+        this.updateStationList();
+      }
+
+      setupAdminPanel() {
+        // Admin toggle button
+        document.getElementById('admin-toggle').addEventListener('click', () => {
+          this.toggleAdminPanel();
+        });
+
+        // Close admin button
+        document.getElementById('close-admin').addEventListener('click', () => {
+          this.closeAdminPanel();
+        });
+
+        // Form buttons
+        document.getElementById('save-station-btn').addEventListener('click', () => {
+          this.saveStation();
+        });
+
+        document.getElementById('test-embed-btn').addEventListener('click', () => {
+          this.testEmbedding();
+        });
+
+        document.getElementById('cancel-edit-btn').addEventListener('click', () => {
+          this.cancelEdit();
+        });
+
+        document.getElementById('clear-form-btn').addEventListener('click', () => {
+          this.clearForm();
+        });
+
+        // Update station list
+        this.updateStationList();
+      }
+
+      toggleAdminPanel() {
+        const panel = document.getElementById('admin-panel');
+        panel.classList.toggle('open');
+      }
+
+      closeAdminPanel() {
+        const panel = document.getElementById('admin-panel');
+        panel.classList.remove('open');
+        this.cancelEdit();
+      }
+
+      updateStationList() {
+        const container = document.getElementById('station-list');
+        container.innerHTML = '';
+
+        this.stations.forEach((station, index) => {
+          const item = document.createElement('div');
+          item.className = 'station-item';
+          item.innerHTML = `
+            <div class="station-info">
+              <h4>${station.name}</h4>
+              <p>${station.description}</p>
+              <small>YouTube ID: ${station.youtubeId}</small>
+            </div>
+            <div class="station-controls">
+              <button class="edit-btn" onclick="radioInterface.editStation(${index})">Edit</button>
+              <button class="delete-btn" onclick="radioInterface.deleteStation(${index})">Delete</button>
+            </div>
+          `;
+          container.appendChild(item);
+        });
+      }
+
+      editStation(index) {
+        const station = this.stations[index];
+        this.editingStationIndex = index;
+
+        // Fill form with station data
+        document.getElementById('station-name-input').value = station.name;
+        document.getElementById('station-description-input').value = station.description;
+        document.getElementById('station-youtube-input').value = station.youtubeId;
+        document.getElementById('station-color-input').value = station.color || '#FF1493';
+
+        // Update form title and buttons
+        document.getElementById('form-title').textContent = `Edit Station: ${station.name}`;
+        document.getElementById('save-station-btn').textContent = 'Update Station';
+        document.getElementById('cancel-edit-btn').style.display = 'inline-block';
+
+        // Clear test results
+        this.clearTestResults();
+      }
+
+      deleteStation(index) {
+        const station = this.stations[index];
+        if (confirm(`Delete "${station.name}"?`)) {
+          this.stations.splice(index, 1);
+          this.saveStationsData();
+
+          // If we deleted the current station, load the first available
+          if (index === this.currentStationIndex) {
+            this.currentStationIndex = 0;
+            if (this.stations.length > 0) {
+              this.selectStation(0);
+            }
+          } else if (index < this.currentStationIndex) {
+            this.currentStationIndex--;
+          }
+        }
+      }
+
+      saveStation() {
+        const name = document.getElementById('station-name-input').value.trim();
+        const description = document.getElementById('station-description-input').value.trim();
+        const youtubeId = document.getElementById('station-youtube-input').value.trim();
+        const color = document.getElementById('station-color-input').value;
+
+        // Validate required fields
+        if (!name) {
+          this.showTestResult('Station name is required', 'error');
+          return;
+        }
+
+        if (!youtubeId) {
+          this.showTestResult('YouTube content is required', 'error');
+          return;
+        }
+
+        // Extract YouTube ID from URL if needed
+        let processedYouTubeId = this.extractYouTubeId(youtubeId);
+        if (!processedYouTubeId) {
+          this.showTestResult('Invalid YouTube URL or ID format', 'error');
+          return;
+        }
+
+        const stationData = {
+          id: this.editingStationIndex !== null ?
+            this.stations[this.editingStationIndex].id :
+            'station-' + Date.now(),
+          name: name,
+          description: description || 'No description',
+          youtubeId: processedYouTubeId,
+          color: color
+        };
+
+        if (this.editingStationIndex !== null) {
+          // Update existing station
+          this.stations[this.editingStationIndex] = stationData;
+          this.showTestResult('✅ Station updated successfully!', 'success');
+        } else {
+          // Add new station
+          this.stations.push(stationData);
+          this.showTestResult('✅ Station created successfully!', 'success');
+        }
+
+        this.saveStationsData();
+        this.clearForm();
+      }
+
+      testEmbedding() {
+        const youtubeInput = document.getElementById('station-youtube-input').value.trim();
+
+        if (!youtubeInput) {
+          this.showTestResult('Please enter YouTube content before testing', 'error');
+          return;
+        }
+
+        const youtubeId = this.extractYouTubeId(youtubeInput);
+        if (!youtubeId) {
+          this.showTestResult('Invalid YouTube URL or ID format', 'error');
+          return;
+        }
+
+        this.showTestResult('🔍 Testing embedding...', 'info');
+
+        // Load YouTube API if not already loaded
+        if (!window.YT) {
+          this.showTestResult('⏳ Loading YouTube API...', 'info');
+          const tag = document.createElement('script');
+          tag.src = 'https://www.youtube.com/iframe_api';
+          const firstScriptTag = document.getElementsByTagName('script')[0];
+          firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+
+          window.onYouTubeIframeAPIReady = () => {
+            this.testEmbedding();
+          };
+          return;
+        }
+
+        // Create test player
+        const testId = `test-player-${Date.now()}`;
+        const testDiv = document.createElement('div');
+        testDiv.id = testId;
+        document.getElementById('youtube-container').appendChild(testDiv);
+
+        let hasResponded = false;
+        const timeout = setTimeout(() => {
+          if (!hasResponded) {
+            hasResponded = true;
+            this.showTestResult('⏰ Test timeout - content may not be available', 'warning');
+            cleanup();
+          }
+        }, 15000);
+
+        const cleanup = () => {
+          clearTimeout(timeout);
+          if (testDiv.parentNode) {
+            testDiv.parentNode.removeChild(testDiv);
+          }
+        };
+
+        try {
+          new YT.Player(testId, {
+            height: '1',
+            width: '1',
+            videoId: youtubeId,
+            playerVars: {
+              autoplay: 0,
+              controls: 0
+            },
+            events: {
+              onReady: () => {
+                if (!hasResponded) {
+                  hasResponded = true;
+                  this.showTestResult('✅ Embedding test PASSED! This content can be embedded.', 'success');
+                  this.showTestResult('💡 You can safely save this station - it will work in the radio.', 'info');
+                  cleanup();
+                }
+              },
+              onError: (event) => {
+                if (!hasResponded) {
+                  hasResponded = true;
+                  let errorMessage = 'Unknown error';
+                  let suggestion = '';
+
+                  switch (event.data) {
+                    case 2:
+                      errorMessage = 'Invalid video/playlist ID';
+                      suggestion = 'Check that the ID is correct.';
+                      break;
+                    case 5:
+                      errorMessage = 'HTML5 player error';
+                      suggestion = 'Try different content - this may have technical issues.';
+                      break;
+                    case 100:
+                      errorMessage = 'Content not found or private';
+                      suggestion = 'Make sure the content is public and the ID is correct.';
+                      break;
+                    case 101:
+                    case 150:
+                      errorMessage = 'Content owner does not allow embedding';
+                      suggestion = 'Find different content that allows embedding.';
+                      break;
+                    default:
+                      errorMessage = `Error code: ${event.data}`;
+                      suggestion = 'Try different content.';
+                  }
+
+                  this.showTestResult(`❌ Embedding test FAILED: ${errorMessage}`, 'error');
+                  this.showTestResult(`💡 Suggestion: ${suggestion}`, 'warning');
+                  cleanup();
+                }
+              }
+            }
+          });
+        } catch (error) {
+          if (!hasResponded) {
+            hasResponded = true;
+            this.showTestResult(`❌ Test failed: ${error.message}`, 'error');
+            cleanup();
+          }
+        }
+      }
+
+      extractYouTubeId(input) {
+        // If it's already just an ID, return it
+        if (input.length === 11 && !input.includes('/')) {
+          return input;
+        }
+
+        // Handle playlist IDs
+        if (input.startsWith('PL') && input.length > 20) {
+          return input;
+        }
+
+        // Handle URLs
+        try {
+          const url = new URL(input);
+          const params = new URLSearchParams(url.search);
+
+          // Video ID from v parameter
+          if (params.get('v')) {
+            return params.get('v');
+          }
+
+          // Playlist ID from list parameter
+          if (params.get('list')) {
+            return params.get('list');
+          }
+
+          // Handle youtu.be short URLs
+          if (url.hostname === 'youtu.be') {
+            return url.pathname.slice(1);
+          }
+        } catch (error) {
+          // Not a valid URL, might be just an ID
+          return input.length === 11 ? input : null;
+        }
+
+        return null;
+      }
+
+      cancelEdit() {
+        this.editingStationIndex = null;
+        this.clearForm();
+
+        // Reset form title and buttons
+        document.getElementById('form-title').textContent = 'Add New Station';
+        document.getElementById('save-station-btn').textContent = 'Save Station';
+        document.getElementById('cancel-edit-btn').style.display = 'none';
+      }
+
+      clearForm() {
+        document.getElementById('station-name-input').value = '';
+        document.getElementById('station-description-input').value = '';
+        document.getElementById('station-youtube-input').value = '';
+        document.getElementById('station-color-input').value = '#FF1493';
+        this.clearTestResults();
+      }
+
+      showTestResult(message, type = 'info') {
+        const testResults = document.getElementById('test-results');
+        const testOutput = document.getElementById('test-output');
+
+        // Show the test results section
+        testResults.classList.add('show');
+
+        // Create result item
+        const resultItem = document.createElement('div');
+        resultItem.className = `test-result ${type}`;
+        resultItem.innerHTML = `
+          <span style="opacity: 0.7;">[${new Date().toLocaleTimeString()}]</span>
+          ${message}
+        `;
+
+        testOutput.appendChild(resultItem);
+        testOutput.scrollTop = testOutput.scrollHeight;
+
+        // Auto-clear old results if too many
+        const results = testOutput.querySelectorAll('.test-result');
+        if (results.length > 8) {
+          results[0].remove();
+        }
+      }
+
+      clearTestResults() {
+        const testResults = document.getElementById('test-results');
+        const testOutput = document.getElementById('test-output');
+
+        testResults.classList.remove('show');
+        testOutput.innerHTML = '';
+      }
+    }
+
+    // Make radio interface globally accessible for admin panel
+    let radioInterface;
+
+    // Initialize when page loads
+    window.addEventListener('load', () => {
+      radioInterface = new RadioInterface();
+    });
+  </script>
+</body>
+</html>

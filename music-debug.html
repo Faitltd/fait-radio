@@ -1,0 +1,344 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAIT Radio - Music Debug</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #000;
+      color: #00FFFF;
+      padding: 20px;
+      margin: 0;
+    }
+    .debug-section {
+      background: rgba(0, 255, 255, 0.1);
+      border: 2px solid #00FFFF;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 10px 0;
+    }
+    .error { color: #ff1744; }
+    .success { color: #39FF14; }
+    .warning { color: #ffa000; }
+    .info { color: #00FFFF; }
+    button {
+      background: rgba(0, 255, 255, 0.2);
+      border: 2px solid #00FFFF;
+      color: #00FFFF;
+      padding: 10px 20px;
+      margin: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: monospace;
+    }
+    button:hover {
+      background: rgba(0, 255, 255, 0.4);
+    }
+    #youtube-container {
+      border: 2px solid #ff1744;
+      background: rgba(255, 23, 68, 0.1);
+      padding: 10px;
+      margin: 10px 0;
+    }
+    .test-results {
+      background: rgba(0, 0, 0, 0.5);
+      padding: 15px;
+      border-radius: 4px;
+      margin: 10px 0;
+      max-height: 300px;
+      overflow-y: auto;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎵 FAIT Radio - Music Playback Debug</h1>
+  
+  <div class="debug-section">
+    <h2>📋 YouTube API Status</h2>
+    <div id="api-status">Checking...</div>
+    <button onclick="checkYouTubeAPI()">🔄 Recheck API</button>
+  </div>
+  
+  <div class="debug-section">
+    <h2>🎵 Direct Music Test</h2>
+    <p>Test YouTube playback directly without the full app:</p>
+    <button onclick="testDirectPlayback()">▶️ Test Direct Playback</button>
+    <button onclick="testPlaylist()">📋 Test Playlist</button>
+    <button onclick="stopPlayback()">⏹️ Stop</button>
+    <div id="youtube-container">YouTube player will appear here</div>
+    <div id="playback-status">Ready to test</div>
+  </div>
+  
+  <div class="debug-section">
+    <h2>🔧 Browser Compatibility</h2>
+    <div id="browser-status">Checking...</div>
+    <button onclick="checkBrowserSupport()">🔄 Check Browser</button>
+  </div>
+  
+  <div class="debug-section">
+    <h2>🎯 Station Data Test</h2>
+    <div id="station-status">Checking...</div>
+    <button onclick="testStationData()">🔄 Test Stations</button>
+  </div>
+  
+  <div class="debug-section">
+    <h2>📊 Test Results</h2>
+    <div class="test-results" id="test-results">
+      <div class="info">Click any test button to see results...</div>
+    </div>
+  </div>
+
+  <script>
+    let testPlayer = null;
+    let testResults = [];
+    
+    function addResult(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      testResults.push(`<div class="${type}">[${timestamp}] ${message}</div>`);
+      document.getElementById('test-results').innerHTML = testResults.slice(-20).join('');
+    }
+    
+    function updateStatus(elementId, content) {
+      document.getElementById(elementId).innerHTML = content;
+    }
+    
+    function checkYouTubeAPI() {
+      addResult('🔍 Checking YouTube API...', 'info');
+      
+      if (typeof YT === 'undefined') {
+        addResult('❌ YouTube API not loaded', 'error');
+        updateStatus('api-status', '<div class="error">❌ YouTube API not loaded</div>');
+        
+        // Try to load it
+        addResult('🔄 Attempting to load YouTube API...', 'info');
+        const script = document.createElement('script');
+        script.src = 'https://www.youtube.com/iframe_api';
+        script.onload = () => {
+          addResult('✅ YouTube API script loaded', 'success');
+        };
+        script.onerror = () => {
+          addResult('❌ Failed to load YouTube API script', 'error');
+        };
+        document.head.appendChild(script);
+        
+        window.onYouTubeIframeAPIReady = () => {
+          addResult('✅ YouTube API ready!', 'success');
+          updateStatus('api-status', '<div class="success">✅ YouTube API ready</div>');
+        };
+      } else {
+        addResult('✅ YouTube API already loaded', 'success');
+        updateStatus('api-status', '<div class="success">✅ YouTube API loaded</div>');
+        
+        if (YT.Player) {
+          addResult('✅ YT.Player available', 'success');
+        } else {
+          addResult('❌ YT.Player not available', 'error');
+        }
+      }
+    }
+    
+    function testDirectPlayback() {
+      addResult('🎵 Testing direct YouTube playback...', 'info');
+      
+      if (typeof YT === 'undefined' || !YT.Player) {
+        addResult('❌ YouTube API not ready', 'error');
+        updateStatus('playback-status', '<div class="error">❌ YouTube API not ready</div>');
+        return;
+      }
+      
+      // Destroy existing player
+      if (testPlayer) {
+        try {
+          testPlayer.destroy();
+        } catch (error) {
+          addResult('⚠️ Error destroying previous player: ' + error.message, 'warning');
+        }
+      }
+      
+      try {
+        addResult('🔧 Creating YouTube player...', 'info');
+        testPlayer = new YT.Player('youtube-container', {
+          height: '200',
+          width: '300',
+          videoId: 'jfKfPfyJRdk', // LoFi Hip Hop Radio
+          playerVars: {
+            autoplay: 1,
+            controls: 1
+          },
+          events: {
+            onReady: (event) => {
+              addResult('✅ Player ready!', 'success');
+              updateStatus('playback-status', '<div class="success">✅ Player ready</div>');
+            },
+            onStateChange: (event) => {
+              const states = {
+                '-1': 'UNSTARTED',
+                '0': 'ENDED',
+                '1': 'PLAYING',
+                '2': 'PAUSED',
+                '3': 'BUFFERING',
+                '5': 'CUED'
+              };
+              const stateName = states[event.data] || event.data;
+              addResult(`🎵 Player state: ${stateName}`, 'info');
+              updateStatus('playback-status', `<div class="info">🎵 ${stateName}</div>`);
+              
+              if (event.data === 1) { // PLAYING
+                addResult('🎉 MUSIC IS PLAYING!', 'success');
+              }
+            },
+            onError: (event) => {
+              const errorCodes = {
+                2: 'Invalid video ID',
+                5: 'HTML5 player error',
+                100: 'Video not found or private',
+                101: 'Embedding not allowed',
+                150: 'Embedding not allowed'
+              };
+              const errorMsg = errorCodes[event.data] || `Unknown error: ${event.data}`;
+              addResult(`❌ Player error: ${errorMsg}`, 'error');
+              updateStatus('playback-status', `<div class="error">❌ ${errorMsg}</div>`);
+            }
+          }
+        });
+      } catch (error) {
+        addResult('❌ Error creating player: ' + error.message, 'error');
+        updateStatus('playback-status', '<div class="error">❌ Player creation failed</div>');
+      }
+    }
+    
+    function testPlaylist() {
+      addResult('📋 Testing playlist playback...', 'info');
+      
+      if (typeof YT === 'undefined' || !YT.Player) {
+        addResult('❌ YouTube API not ready', 'error');
+        return;
+      }
+      
+      // Destroy existing player
+      if (testPlayer) {
+        try {
+          testPlayer.destroy();
+        } catch (error) {
+          addResult('⚠️ Error destroying previous player: ' + error.message, 'warning');
+        }
+      }
+      
+      try {
+        testPlayer = new YT.Player('youtube-container', {
+          height: '200',
+          width: '300',
+          playerVars: {
+            autoplay: 1,
+            controls: 1,
+            list: 'OLAK5uy_mZ_n0miNZPEDzY9Xf212_-ZVgH5S5yroo',
+            listType: 'playlist'
+          },
+          events: {
+            onReady: (event) => {
+              addResult('✅ Playlist player ready!', 'success');
+              updateStatus('playback-status', '<div class="success">✅ Playlist ready</div>');
+            },
+            onStateChange: (event) => {
+              const states = {
+                '-1': 'UNSTARTED',
+                '0': 'ENDED',
+                '1': 'PLAYING',
+                '2': 'PAUSED',
+                '3': 'BUFFERING',
+                '5': 'CUED'
+              };
+              const stateName = states[event.data] || event.data;
+              addResult(`📋 Playlist state: ${stateName}`, 'info');
+              
+              if (event.data === 1) { // PLAYING
+                addResult('🎉 PLAYLIST IS PLAYING!', 'success');
+              }
+            },
+            onError: (event) => {
+              addResult(`❌ Playlist error: ${event.data}`, 'error');
+            }
+          }
+        });
+      } catch (error) {
+        addResult('❌ Error creating playlist player: ' + error.message, 'error');
+      }
+    }
+    
+    function stopPlayback() {
+      if (testPlayer) {
+        try {
+          testPlayer.pauseVideo();
+          addResult('⏹️ Playback stopped', 'info');
+          updateStatus('playback-status', '<div class="info">⏹️ Stopped</div>');
+        } catch (error) {
+          addResult('❌ Error stopping playback: ' + error.message, 'error');
+        }
+      }
+    }
+    
+    function checkBrowserSupport() {
+      addResult('🔍 Checking browser support...', 'info');
+      
+      const checks = [
+        { name: 'HTML5 Audio', test: () => !!window.Audio },
+        { name: 'HTML5 Video', test: () => !!document.createElement('video').canPlayType },
+        { name: 'Fetch API', test: () => !!window.fetch },
+        { name: 'Promises', test: () => !!window.Promise },
+        { name: 'Local Storage', test: () => !!window.localStorage },
+        { name: 'Console', test: () => !!window.console }
+      ];
+      
+      let results = '<h3>Browser Compatibility:</h3>';
+      checks.forEach(check => {
+        const supported = check.test();
+        const status = supported ? '✅' : '❌';
+        const className = supported ? 'success' : 'error';
+        results += `<div class="${className}">${status} ${check.name}</div>`;
+        addResult(`${status} ${check.name}`, className);
+      });
+      
+      updateStatus('browser-status', results);
+      
+      // Check user agent
+      addResult(`Browser: ${navigator.userAgent}`, 'info');
+    }
+    
+    function testStationData() {
+      addResult('🎯 Testing station data...', 'info');
+      
+      // Test if we can load the stations.js file
+      if (typeof window.stationData !== 'undefined') {
+        addResult('✅ Station data loaded', 'success');
+        addResult(`📊 Found ${window.stationData.length} stations`, 'info');
+        
+        window.stationData.forEach((station, index) => {
+          const hasYouTubeId = station.youtubeId && station.youtubeId.trim() !== '';
+          const status = hasYouTubeId ? '✅' : '❌';
+          const className = hasYouTubeId ? 'success' : 'error';
+          addResult(`${status} ${station.name}: ${station.youtubeId || 'NO ID'}`, className);
+        });
+        
+        updateStatus('station-status', '<div class="success">✅ Station data available</div>');
+      } else {
+        addResult('❌ Station data not loaded', 'error');
+        updateStatus('station-status', '<div class="error">❌ Station data missing</div>');
+      }
+    }
+    
+    // Auto-run initial checks
+    document.addEventListener('DOMContentLoaded', () => {
+      setTimeout(() => {
+        checkYouTubeAPI();
+        checkBrowserSupport();
+        testStationData();
+      }, 500);
+    });
+  </script>
+  
+  <!-- Load station data for testing -->
+  <script src="js/stations.js"></script>
+</body>
+</html>

@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Embedding Test</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #000;
+      color: #00FFFF;
+      padding: 20px;
+      margin: 0;
+    }
+    .test-container {
+      background: rgba(0, 255, 255, 0.1);
+      border: 2px solid #00FFFF;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 10px 0;
+    }
+    iframe {
+      border: 2px solid #FF1493;
+      border-radius: 4px;
+      margin: 10px 0;
+    }
+    .video-info {
+      margin: 10px 0;
+      padding: 10px;
+      background: rgba(0, 0, 0, 0.5);
+      border-radius: 4px;
+    }
+    .success { color: #39FF14; }
+    .error { color: #FF1744; }
+    .warning { color: #FFA000; }
+  </style>
+</head>
+<body>
+  <h1>🎵 YouTube Embedding Test</h1>
+  
+  <div class="test-container">
+    <h2>Testing Updated Station YouTube IDs</h2>
+    <p>This page tests if our YouTube videos can be embedded properly.</p>
+  </div>
+
+  <div class="test-container">
+    <h3>FAIT FM - Synthwave Mix</h3>
+    <div class="video-info">
+      <strong>YouTube ID:</strong> MV_3Dpw-BRY<br>
+      <strong>URL:</strong> https://www.youtube.com/watch?v=MV_3Dpw-BRY
+    </div>
+    <iframe width="560" height="315" 
+            src="https://www.youtube.com/embed/MV_3Dpw-BRY?enablejsapi=1&controls=1" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+    </iframe>
+  </div>
+
+  <div class="test-container">
+    <h3>Lo-Fi Beats</h3>
+    <div class="video-info">
+      <strong>YouTube ID:</strong> DWcJFNfaw9c<br>
+      <strong>URL:</strong> https://www.youtube.com/watch?v=DWcJFNfaw9c
+    </div>
+    <iframe width="560" height="315" 
+            src="https://www.youtube.com/embed/DWcJFNfaw9c?enablejsapi=1&controls=1" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+    </iframe>
+  </div>
+
+  <div class="test-container">
+    <h3>Synthwave Radio</h3>
+    <div class="video-info">
+      <strong>YouTube ID:</strong> rDBbaGCCIhk<br>
+      <strong>URL:</strong> https://www.youtube.com/watch?v=rDBbaGCCIhk
+    </div>
+    <iframe width="560" height="315" 
+            src="https://www.youtube.com/embed/rDBbaGCCIhk?enablejsapi=1&controls=1" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+    </iframe>
+  </div>
+
+  <div class="test-container">
+    <h3>Test Station (Rick Roll)</h3>
+    <div class="video-info">
+      <strong>YouTube ID:</strong> dQw4w9WgXcQ<br>
+      <strong>URL:</strong> https://www.youtube.com/watch?v=dQw4w9WgXcQ
+    </div>
+    <iframe width="560" height="315" 
+            src="https://www.youtube.com/embed/dQw4w9WgXcQ?enablejsapi=1&controls=1" 
+            frameborder="0" 
+            allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture" 
+            allowfullscreen>
+    </iframe>
+  </div>
+
+  <div class="test-container">
+    <h2>📊 Test Results</h2>
+    <p>If you can see and play the videos above, then the YouTube IDs are working correctly for embedding.</p>
+    <p>If any video shows "Video unavailable" or similar error, that YouTube ID needs to be replaced.</p>
+    
+    <h3>✅ What to look for:</h3>
+    <ul>
+      <li class="success">✅ Video loads and shows thumbnail/player</li>
+      <li class="success">✅ Video can be played when clicked</li>
+      <li class="success">✅ Audio plays correctly</li>
+    </ul>
+    
+    <h3>❌ Error indicators:</h3>
+    <ul>
+      <li class="error">❌ "Video unavailable" message</li>
+      <li class="error">❌ "Private video" message</li>
+      <li class="error">❌ "Playback on other websites has been disabled" message</li>
+      <li class="error">❌ Black screen with no controls</li>
+    </ul>
+  </div>
+
+  <script>
+    // Log iframe load events
+    document.addEventListener('DOMContentLoaded', () => {
+      const iframes = document.querySelectorAll('iframe');
+      iframes.forEach((iframe, index) => {
+        iframe.addEventListener('load', () => {
+          console.log(`✅ Iframe ${index + 1} loaded successfully`);
+        });
+        
+        iframe.addEventListener('error', (e) => {
+          console.error(`❌ Iframe ${index + 1} failed to load:`, e);
+        });
+      });
+      
+      console.log(`🧪 Testing ${iframes.length} YouTube embeds...`);
+    });
+  </script>
+</body>
+</html>

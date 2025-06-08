@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>YouTube Debug Tool - FAIT Radio</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #0a0a0a;
+      color: #ffffff;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+    }
+    .debug-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #FF1493;
+      border-radius: 8px;
+      background: rgba(255, 20, 147, 0.1);
+    }
+    .result {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .success { background: rgba(57, 255, 20, 0.2); border: 1px solid #39FF14; }
+    .error { background: rgba(255, 23, 68, 0.2); border: 1px solid #ff1744; }
+    .info { background: rgba(0, 255, 255, 0.2); border: 1px solid #00FFFF; }
+    input, button {
+      background: rgba(26, 26, 46, 0.9);
+      border: 2px solid #8A2BE2;
+      color: white;
+      padding: 10px;
+      border-radius: 6px;
+      margin: 5px;
+    }
+    button {
+      background: linear-gradient(45deg, #FF1493, #8A2BE2);
+      cursor: pointer;
+    }
+    button:hover {
+      box-shadow: 0 0 15px #FF1493;
+    }
+    #player-container {
+      width: 100%;
+      height: 200px;
+      border: 2px solid #00FFFF;
+      border-radius: 8px;
+      margin: 10px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎵 YouTube Debug Tool</h1>
+  
+  <div class="debug-section">
+    <h2>Test YouTube Content</h2>
+    <input type="text" id="youtube-id" placeholder="Enter YouTube Video ID, Playlist ID, or URL" value="jfKfPfyJRdk" style="width: 70%;">
+    <button onclick="testYouTubeId()">Test Content</button>
+    <button onclick="testCommonIds()">Test Common IDs</button>
+    <button onclick="testPlaylists()">Test Playlists</button>
+    <div id="test-results"></div>
+  </div>
+  
+  <div class="debug-section">
+    <h2>YouTube Player</h2>
+    <div id="player-container"></div>
+    <button onclick="playVideo()">Play</button>
+    <button onclick="pauseVideo()">Pause</button>
+    <button onclick="stopVideo()">Stop</button>
+  </div>
+  
+  <div class="debug-section">
+    <h2>Common YouTube Content for Testing</h2>
+    <h3>Video IDs (Live Streams)</h3>
+    <ul>
+      <li><strong>jfKfPfyJRdk</strong> - LoFi Hip Hop Radio (24/7 stream)</li>
+      <li><strong>5qap5aO4i9A</strong> - ChilledCow LoFi</li>
+      <li><strong>MVPTGNGiI-4</strong> - Synthwave Radio</li>
+      <li><strong>Dx5qFachd3A</strong> - Smooth Jazz</li>
+      <li><strong>rUxyKA_-grg</strong> - Chillhop Radio</li>
+      <li><strong>kgx4WGK0oNU</strong> - Ambient Music</li>
+    </ul>
+
+    <h3>Playlist IDs</h3>
+    <ul>
+      <li><strong>OLAK5uy_mZ_n0miNZPEDzY9Xf212_-ZVgH5S5yroo</strong> - Example Album Playlist</li>
+      <li><strong>PLrAl6rYAS4Z7hWOgOgKjKW8VaOtMnKGWz</strong> - Synthwave Mix</li>
+      <li><strong>PLOHoVaTp8R7eQDSiZifrpjsQy0WuCCYDr</strong> - Chill Music Playlist</li>
+    </ul>
+
+    <h3>Full URLs</h3>
+    <ul>
+      <li><strong>https://www.youtube.com/watch?v=4z3mpO76luc&list=OLAK5uy_mZ_n0miNZPEDzY9Xf212_-ZVgH5S5yroo</strong></li>
+      <li><strong>https://www.youtube.com/playlist?list=OLAK5uy_mZ_n0miNZPEDzY9Xf212_-ZVgH5S5yroo</strong></li>
+    </ul>
+  </div>
+
+  <script>
+    let player;
+    let isAPIReady = false;
+
+    function addResult(message, type = 'info') {
+      const resultsDiv = document.getElementById('test-results');
+      const resultDiv = document.createElement('div');
+      resultDiv.className = `result ${type}`;
+      resultDiv.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      resultsDiv.appendChild(resultDiv);
+    }
+
+    // Load YouTube API
+    function loadYouTubeAPI() {
+      if (window.YT) {
+        onYouTubeIframeAPIReady();
+        return;
+      }
+      
+      const tag = document.createElement('script');
+      tag.src = 'https://www.youtube.com/iframe_api';
+      const firstScriptTag = document.getElementsByTagName('script')[0];
+      firstScriptTag.parentNode.insertBefore(tag, firstScriptTag);
+    }
+
+    function onYouTubeIframeAPIReady() {
+      isAPIReady = true;
+      addResult('YouTube API loaded successfully', 'success');
+      
+      player = new YT.Player('player-container', {
+        height: '200',
+        width: '100%',
+        videoId: 'jfKfPfyJRdk',
+        playerVars: {
+          autoplay: 0,
+          controls: 1
+        },
+        events: {
+          onReady: onPlayerReady,
+          onStateChange: onPlayerStateChange,
+          onError: onPlayerError
+        }
+      });
+    }
+
+    function onPlayerReady(event) {
+      addResult('Player ready', 'success');
+    }
+
+    function onPlayerStateChange(event) {
+      const states = {
+        '-1': 'unstarted',
+        '0': 'ended',
+        '1': 'playing',
+        '2': 'paused',
+        '3': 'buffering',
+        '5': 'cued'
+      };
+      addResult(`Player state: ${states[event.data] || event.data}`, 'info');
+    }
+
+    function onPlayerError(event) {
+      const errors = {
+        2: 'Invalid video ID',
+        5: 'HTML5 player error',
+        100: 'Video not found or private',
+        101: 'Embedding not allowed by owner',
+        150: 'Embedding not allowed by owner'
+      };
+      addResult(`Player error: ${errors[event.data] || event.data}`, 'error');
+    }
+
+    function testYouTubeId() {
+      const content = document.getElementById('youtube-id').value.trim();
+      if (!content) {
+        addResult('Please enter YouTube content', 'error');
+        return;
+      }
+
+      if (!isAPIReady || !player) {
+        addResult('YouTube API not ready', 'error');
+        return;
+      }
+
+      addResult(`Testing content: ${content}`, 'info');
+
+      try {
+        // Parse the content to determine if it's a video, playlist, or URL
+        const contentInfo = parseYouTubeContent(content);
+
+        if (!contentInfo.isValid) {
+          addResult(`Invalid content: ${contentInfo.error}`, 'error');
+          return;
+        }
+
+        addResult(`Detected ${contentInfo.type}: ${contentInfo.description || 'Unknown'}`, 'info');
+
+        if (contentInfo.type === 'playlist') {
+          player.loadPlaylist({
+            list: contentInfo.playlistId,
+            listType: 'playlist',
+            index: contentInfo.videoIndex || 0
+          });
+        } else {
+          player.loadVideoById(contentInfo.videoId);
+        }
+      } catch (error) {
+        addResult(`Error loading content: ${error.message}`, 'error');
+      }
+    }
+
+    function parseYouTubeContent(input) {
+      if (!input || typeof input !== 'string') {
+        return { isValid: false, error: 'Empty or invalid input' };
+      }
+
+      const trimmed = input.trim();
+
+      // Check if it's a full YouTube URL
+      const urlMatch = trimmed.match(/(?:youtube\.com\/watch\?|youtu\.be\/|youtube\.com\/playlist\?)/);
+      if (urlMatch) {
+        try {
+          const urlObj = new URL(trimmed);
+          const params = new URLSearchParams(urlObj.search);
+
+          const videoId = params.get('v');
+          const playlistId = params.get('list');
+          const index = params.get('index');
+
+          if (playlistId) {
+            const result = {
+              isValid: true,
+              type: 'playlist',
+              playlistId: playlistId,
+              description: `Playlist (${playlistId.substring(0, 20)}...)`
+            };
+
+            if (videoId) {
+              result.videoId = videoId;
+              result.description += ` starting at video ${videoId}`;
+            }
+
+            if (index) {
+              result.videoIndex = parseInt(index, 10);
+              result.description += ` at index ${index}`;
+            }
+
+            return result;
+          } else if (videoId) {
+            return {
+              isValid: true,
+              type: 'video',
+              videoId: videoId,
+              description: `Video (${videoId})`
+            };
+          }
+
+          return { isValid: false, error: 'No video or playlist ID found in URL' };
+        } catch (error) {
+          return { isValid: false, error: 'Invalid URL format' };
+        }
+      }
+
+      // Check if it's a playlist ID
+      if (trimmed.match(/^(PL|UU|LL|FL|RD|OLAK5uy_)[a-zA-Z0-9_-]+$/)) {
+        return {
+          isValid: true,
+          type: 'playlist',
+          playlistId: trimmed,
+          description: `Playlist ID (${trimmed.substring(0, 20)}...)`
+        };
+      }
+
+      // Check if it's a video ID
+      if (trimmed.match(/^[a-zA-Z0-9_-]{11}$/)) {
+        return {
+          isValid: true,
+          type: 'video',
+          videoId: trimmed,
+          description: `Video ID (${trimmed})`
+        };
+      }
+
+      return { isValid: false, error: 'Unrecognized format' };
+    }
+
+    function testCommonIds() {
+      const commonIds = [
+        'jfKfPfyJRdk',
+        '5qap5aO4i9A', 
+        'MVPTGNGiI-4',
+        'Dx5qFachd3A',
+        'rUxyKA_-grg',
+        'kgx4WGK0oNU'
+      ];
+
+      let index = 0;
+      function testNext() {
+        if (index >= commonIds.length) {
+          addResult('Finished testing all common IDs', 'success');
+          return;
+        }
+
+        const id = commonIds[index];
+        addResult(`Testing common ID ${index + 1}/${commonIds.length}: ${id}`, 'info');
+        document.getElementById('youtube-id').value = id;
+        
+        try {
+          player.loadVideoById(id);
+        } catch (error) {
+          addResult(`Error with ${id}: ${error.message}`, 'error');
+        }
+
+        index++;
+        setTimeout(testNext, 3000); // Wait 3 seconds between tests
+      }
+
+      testNext();
+    }
+
+    function testPlaylists() {
+      const playlistIds = [
+        'OLAK5uy_mZ_n0miNZPEDzY9Xf212_-ZVgH5S5yroo',
+        'PLrAl6rYAS4Z7hWOgOgKjKW8VaOtMnKGWz',
+        'PLOHoVaTp8R7eQDSiZifrpjsQy0WuCCYDr'
+      ];
+
+      let index = 0;
+      function testNextPlaylist() {
+        if (index >= playlistIds.length) {
+          addResult('Finished testing all playlists', 'success');
+          return;
+        }
+
+        const id = playlistIds[index];
+        addResult(`Testing playlist ${index + 1}/${playlistIds.length}: ${id}`, 'info');
+        document.getElementById('youtube-id').value = id;
+
+        try {
+          player.loadPlaylist({
+            list: id,
+            listType: 'playlist',
+            index: 0
+          });
+        } catch (error) {
+          addResult(`Error with playlist ${id}: ${error.message}`, 'error');
+        }
+
+        index++;
+        setTimeout(testNextPlaylist, 5000); // Wait 5 seconds between tests
+      }
+
+      testNextPlaylist();
+    }
+
+    function playVideo() {
+      if (player && player.playVideo) {
+        player.playVideo();
+      }
+    }
+
+    function pauseVideo() {
+      if (player && player.pauseVideo) {
+        player.pauseVideo();
+      }
+    }
+
+    function stopVideo() {
+      if (player && player.stopVideo) {
+        player.stopVideo();
+      }
+    }
+
+    // Make onYouTubeIframeAPIReady global
+    window.onYouTubeIframeAPIReady = onYouTubeIframeAPIReady;
+
+    // Load API on page load
+    loadYouTubeAPI();
+  </script>
+</body>
+</html>

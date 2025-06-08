@@ -1,0 +1,108 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Panel Test Demo - FAIT Radio</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      margin: 20px;
+      background: #000;
+      color: #fff;
+    }
+    .demo-section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #333;
+      border-radius: 5px;
+    }
+    .demo-instructions {
+      background: rgba(0, 255, 255, 0.1);
+      border: 1px solid var(--neon-cyan);
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+    }
+    #content-area {
+      position: relative;
+      width: 100%;
+      height: 600px;
+      border: 1px solid #333;
+      margin: 20px 0;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎛️ Admin Panel Test Demo - FAIT Radio</h1>
+  
+  <div class="demo-instructions">
+    <h2>🧪 Testing the New Embedding Feature</h2>
+    <p><strong>How to test the new "Test Embed" feature:</strong></p>
+    <ol>
+      <li>Click the "Admin Panel" button below to open the station manager</li>
+      <li>Click "Add New Station" or edit an existing station</li>
+      <li>Enter a YouTube video ID, playlist ID, or full YouTube URL</li>
+      <li>Click the <strong>"Test Embed"</strong> button to check if the video allows embedding</li>
+      <li>Watch the test results appear below the form</li>
+      <li>If the test passes (✅), you can safely save the station</li>
+      <li>If the test fails (❌), try a different video that allows embedding</li>
+    </ol>
+    
+    <p><strong>Test Examples:</strong></p>
+    <ul>
+      <li><strong>Should work:</strong> <code>dQw4w9WgXcQ</code> (Rick Astley - Never Gonna Give You Up)</li>
+      <li><strong>Should work:</strong> <code>jfKfPfyJRdk</code> (LoFi Hip Hop Radio)</li>
+      <li><strong>May fail:</strong> Many music videos from major labels don't allow embedding</li>
+    </ul>
+  </div>
+
+  <div class="demo-section">
+    <h2>Demo Controls</h2>
+    <button onclick="openAdminPanel()" style="padding: 10px 20px; background: #ff00ff; color: white; border: none; border-radius: 5px; cursor: pointer;">
+      🎛️ Open Admin Panel
+    </button>
+  </div>
+
+  <div id="content-area"></div>
+
+  <!-- Load all required scripts -->
+  <script src="js/stations.js"></script>
+  <script src="js/window-manager.js"></script>
+  <script src="js/youtube-player.js"></script>
+  <script src="js/background-manager.js"></script>
+  <script src="js/radio-window.js"></script>
+  <script src="js/admin-panel.js"></script>
+
+  <script>
+    let windowManager, adminPanel;
+
+    function openAdminPanel() {
+      if (!windowManager) {
+        // Initialize components
+        windowManager = new WindowManager();
+        console.log('WindowManager initialized');
+      }
+
+      if (!adminPanel) {
+        adminPanel = new AdminPanel(windowManager);
+        console.log('AdminPanel initialized');
+      }
+
+      // Create the admin panel window
+      const adminWindow = adminPanel.create();
+      if (adminWindow) {
+        console.log('Admin panel opened successfully');
+      } else {
+        console.error('Failed to open admin panel');
+      }
+    }
+
+    // Initialize on page load
+    window.addEventListener('load', () => {
+      console.log('Admin Panel Test Demo loaded');
+    });
+  </script>
+</body>
+</html>

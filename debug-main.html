@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAIT Radio Debug</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <style>
+    .debug-info {
+      position: fixed;
+      top: 10px;
+      right: 10px;
+      background: rgba(0, 0, 0, 0.8);
+      color: #00FFFF;
+      padding: 10px;
+      border-radius: 5px;
+      font-family: monospace;
+      font-size: 12px;
+      z-index: 9999;
+      max-width: 300px;
+    }
+    .debug-info h3 {
+      margin: 0 0 10px 0;
+      color: #FF1493;
+    }
+    .debug-item {
+      margin: 5px 0;
+    }
+    .success { color: #39FF14; }
+    .error { color: #ff1744; }
+    .warning { color: #ffa000; }
+  </style>
+</head>
+<body>
+  <div id="app-container">
+    <div id="desktop">
+      <!-- Top bar -->
+      <header id="top-bar">
+        <ul id="menu">
+          <li><button id="menu-button"><img src="img/menu-icon.png" alt="Menu"></button></li>
+          <li><button id="login-button">Become a member</button></li>
+        </ul>
+        <aside id="time-display">
+          <div id="date">Sat 7 Jun 1997</div>
+          <div id="clock"><img src="img/clock-icon.png" alt="Clock"><span>04:22</span></div>
+        </aside>
+      </header>
+
+      <!-- Main content area -->
+      <section id="content-area">
+        <!-- Windows will be dynamically added here -->
+      </section>
+
+      <!-- Dock/taskbar -->
+      <div id="dock-container">
+        <div id="dock">
+          <ul id="dock-items">
+            <!-- Dock items will be added here -->
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Debug Info Panel -->
+  <div class="debug-info">
+    <h3>🔧 Debug Info</h3>
+    <div id="debug-output">
+      <div class="debug-item">Loading...</div>
+    </div>
+    <button onclick="testRadioWindow()" style="margin-top: 10px; padding: 5px;">Test Radio</button>
+    <button onclick="testAdminPanel()" style="margin-top: 5px; padding: 5px;">Test Admin</button>
+    <button onclick="inspectStations()" style="margin-top: 5px; padding: 5px;">Inspect Stations</button>
+    <button onclick="fixOomahStation()" style="margin-top: 5px; padding: 5px;">Fix Oomah Station</button>
+    <button onclick="cleanupStations()" style="margin-top: 5px; padding: 5px;">Cleanup Stations</button>
+    <button onclick="checkBackgroundVideos()" style="margin-top: 5px; padding: 5px;">Check BG Videos</button>
+    <button onclick="debugYouTubePlayer()" style="margin-top: 5px; padding: 5px;">Debug YouTube</button>
+    <button onclick="disableBackgroundVideos()" style="margin-top: 5px; padding: 5px;">Disable BG Videos</button>
+    <button onclick="clearStorage()" style="margin-top: 5px; padding: 5px;">Clear Storage</button>
+  </div>
+
+  <!-- Load scripts in correct order -->
+  <script src="js/stations.js"></script>
+  <script src="js/window-manager.js"></script>
+  <script src="js/youtube-player.js"></script>
+  <script src="js/background-manager.js"></script>
+  <script src="js/radio-window.js"></script>
+  <script src="js/admin-panel.js"></script>
+  <script src="js/app.js"></script>
+  
+  <script>
+    // Debug functionality
+    function addDebugInfo(message, type = 'info') {
+      const output = document.getElementById('debug-output');
+      const item = document.createElement('div');
+      item.className = `debug-item ${type}`;
+      item.textContent = `${new Date().toLocaleTimeString()}: ${message}`;
+      output.appendChild(item);
+      
+      // Keep only last 10 items
+      while (output.children.length > 10) {
+        output.removeChild(output.firstChild);
+      }
+    }
+    
+    function testRadioWindow() {
+      try {
+        if (window.app && window.app.radioWindow) {
+          window.app.radioWindow.create();
+          addDebugInfo('Radio window created', 'success');
+        } else {
+          addDebugInfo('App or radio window not available', 'error');
+        }
+      } catch (error) {
+        addDebugInfo('Radio test failed: ' + error.message, 'error');
+      }
+    }
+    
+    function testAdminPanel() {
+      try {
+        if (window.app && window.app.adminPanel) {
+          window.app.adminPanel.create();
+          addDebugInfo('Admin panel created', 'success');
+        } else {
+          addDebugInfo('App or admin panel not available', 'error');
+        }
+      } catch (error) {
+        addDebugInfo('Admin test failed: ' + error.message, 'error');
+      }
+    }
+
+    function inspectStations() {
+      addDebugInfo('=== STATION INSPECTION ===', 'info');
+
+      // Check default stations
+      if (window.stationData) {
+        addDebugInfo(`Default stations: ${window.stationData.length}`, 'info');
+        window.stationData.forEach(station => {
+          addDebugInfo(`• ${station.name} (${station.id}): ${station.youtubeId}`, 'info');
+        });
+      }
+
+      // Check localStorage stations
+      const saved = localStorage.getItem('radioStations');
+      if (saved) {
+        try {
+          const stations = JSON.parse(saved);
+          addDebugInfo(`Saved stations: ${stations.length}`, 'info');
+          stations.forEach(station => {
+            const status = station.youtubeId ? 'OK' : 'MISSING YOUTUBE ID';
+            const type = status === 'OK' ? 'success' : 'error';
+            addDebugInfo(`• ${station.name} (${station.id}): ${station.youtubeId || 'EMPTY'} [${status}]`, type);
+          });
+        } catch (error) {
+          addDebugInfo('Error parsing saved stations: ' + error.message, 'error');
+        }
+      } else {
+        addDebugInfo('No saved stations in localStorage', 'info');
+      }
+    }
+
+    function fixOomahStation() {
+      const saved = localStorage.getItem('radioStations');
+      if (!saved) {
+        addDebugInfo('No saved stations to fix', 'warning');
+        return;
+      }
+
+      try {
+        const stations = JSON.parse(saved);
+        let fixed = false;
+
+        stations.forEach(station => {
+          if (station.name === 'Oomah' || station.id === 'oomah') {
+            if (!station.youtubeId || station.youtubeId.trim() === '') {
+              station.youtubeId = 'jfKfPfyJRdk'; // Default LoFi Hip Hop Radio
+              station.description = station.description || 'Fixed station with default content';
+              fixed = true;
+              addDebugInfo(`Fixed station: ${station.name}`, 'success');
+            }
+          }
+        });
+
+        if (fixed) {
+          localStorage.setItem('radioStations', JSON.stringify(stations));
+          addDebugInfo('Stations saved. Reload to test.', 'success');
+        } else {
+          addDebugInfo('No Oomah station found to fix', 'warning');
+        }
+      } catch (error) {
+        addDebugInfo('Error fixing stations: ' + error.message, 'error');
+      }
+    }
+
+    function checkBackgroundVideos() {
+      if (window.app && window.app.backgroundManager) {
+        const bgMgr = window.app.backgroundManager;
+        addDebugInfo(`BG Videos Enabled: ${bgMgr.isEnabled}`, 'info');
+        addDebugInfo(`Video Support: ${bgMgr.hasVideoSupport}`, 'info');
+        addDebugInfo(`Failed Videos: ${bgMgr.failedVideos.size}`, 'info');
+        addDebugInfo(`Current Video: ${bgMgr.currentVideo || 'None'}`, 'info');
+
+        // Check station background videos
+        const saved = localStorage.getItem('radioStations');
+        if (saved) {
+          try {
+            const stations = JSON.parse(saved);
+            stations.forEach(station => {
+              const hasVideo = station.backgroundVideo && station.backgroundVideo.trim() !== '';
+              const status = hasVideo ? 'HAS VIDEO' : 'NO VIDEO';
+              const type = hasVideo ? 'success' : 'warning';
+              addDebugInfo(`${station.name}: ${status}`, type);
+            });
+          } catch (error) {
+            addDebugInfo('Error checking station videos: ' + error.message, 'error');
+          }
+        }
+      } else {
+        addDebugInfo('Background manager not available', 'error');
+      }
+    }
+
+    function debugYouTubePlayer() {
+      addDebugInfo('=== YOUTUBE PLAYER DEBUG ===', 'info');
+
+      // Check if YouTube API is loaded
+      if (typeof YT === 'undefined') {
+        addDebugInfo('❌ YouTube API not loaded', 'error');
+        return;
+      } else {
+        addDebugInfo('✅ YouTube API loaded', 'success');
+      }
+
+      // Check app and player
+      if (!window.app) {
+        addDebugInfo('❌ App not available', 'error');
+        return;
+      }
+
+      if (!window.app.youtubePlayer) {
+        addDebugInfo('❌ YouTube player not available', 'error');
+        return;
+      }
+
+      const player = window.app.youtubePlayer;
+      addDebugInfo(`Player ready: ${player.isReady}`, player.isReady ? 'success' : 'error');
+      addDebugInfo(`Player playing: ${player.isPlaying}`, 'info');
+      addDebugInfo(`Player volume: ${player.volume}`, 'info');
+
+      if (player.currentStation) {
+        addDebugInfo(`Current station: ${player.currentStation.name}`, 'success');
+        addDebugInfo(`YouTube ID: ${player.currentStation.youtubeId}`, 'info');
+      } else {
+        addDebugInfo('No current station', 'warning');
+      }
+
+      // Check if player object exists
+      if (player.player) {
+        addDebugInfo('✅ YouTube player object exists', 'success');
+        try {
+          const state = player.player.getPlayerState();
+          const stateNames = {
+            '-1': 'UNSTARTED',
+            '0': 'ENDED',
+            '1': 'PLAYING',
+            '2': 'PAUSED',
+            '3': 'BUFFERING',
+            '5': 'CUED'
+          };
+          addDebugInfo(`Player state: ${stateNames[state] || state}`, 'info');
+        } catch (error) {
+          addDebugInfo('Error getting player state: ' + error.message, 'error');
+        }
+      } else {
+        addDebugInfo('❌ YouTube player object missing', 'error');
+      }
+
+      // Check container
+      const container = document.getElementById('youtube-container');
+      if (container) {
+        addDebugInfo('✅ YouTube container exists', 'success');
+      } else {
+        addDebugInfo('❌ YouTube container missing', 'error');
+      }
+    }
+
+    function disableBackgroundVideos() {
+      if (window.app && window.app.backgroundManager) {
+        window.app.backgroundManager.disable();
+        addDebugInfo('Background videos disabled', 'success');
+      } else {
+        addDebugInfo('Background manager not available', 'error');
+      }
+    }
+
+    function cleanupStations() {
+      const saved = localStorage.getItem('radioStations');
+      if (!saved) {
+        addDebugInfo('No saved stations to cleanup', 'warning');
+        return;
+      }
+
+      try {
+        const stations = JSON.parse(saved);
+        const originalCount = stations.length;
+
+        // Remove stations with invalid data
+        const validStations = stations.filter(station => {
+          // Check if station has required properties
+          if (!station.id || !station.name) {
+            addDebugInfo(`Removing station with missing ID/name: ${JSON.stringify(station)}`, 'warning');
+            return false;
+          }
+
+          // Check if station has valid YouTube content
+          if (!station.youtubeId || station.youtubeId.trim() === '') {
+            addDebugInfo(`Removing station with empty YouTube ID: ${station.name}`, 'warning');
+            return false;
+          }
+
+          return true;
+        });
+
+        if (validStations.length !== originalCount) {
+          localStorage.setItem('radioStations', JSON.stringify(validStations));
+          addDebugInfo(`Cleaned up stations: ${originalCount} → ${validStations.length}`, 'success');
+          addDebugInfo('Reload to see changes', 'info');
+        } else {
+          addDebugInfo('All stations are valid, no cleanup needed', 'success');
+        }
+      } catch (error) {
+        addDebugInfo('Error cleaning stations: ' + error.message, 'error');
+      }
+    }
+
+    function disableBackgroundVideos() {
+      if (window.app && window.app.backgroundManager) {
+        window.app.backgroundManager.disable();
+        addDebugInfo('Background videos disabled', 'success');
+      } else {
+        addDebugInfo('Background manager not available', 'error');
+      }
+    }
+
+    function clearStorage() {
+      localStorage.removeItem('radioStations');
+      localStorage.removeItem('faitMixtapes');
+      addDebugInfo('localStorage cleared', 'success');
+      location.reload();
+    }
+    
+    // Monitor app initialization
+    document.addEventListener('DOMContentLoaded', function() {
+      addDebugInfo('DOM loaded', 'success');
+      
+      // Check for required elements
+      const requiredElements = ['content-area', 'dock-items', 'clock'];
+      requiredElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+          addDebugInfo(`✓ ${id} found`, 'success');
+        } else {
+          addDebugInfo(`✗ ${id} missing`, 'error');
+        }
+      });
+      
+      // Monitor app initialization
+      setTimeout(() => {
+        if (window.app) {
+          addDebugInfo('App object available', 'success');
+          
+          if (window.app.windowManager) {
+            addDebugInfo('Window manager ready', 'success');
+          } else {
+            addDebugInfo('Window manager missing', 'error');
+          }
+          
+          if (window.app.youtubePlayer) {
+            addDebugInfo('YouTube player ready', 'success');
+          } else {
+            addDebugInfo('YouTube player missing', 'error');
+          }
+          
+          if (window.app.radioWindow) {
+            addDebugInfo('Radio window ready', 'success');
+          } else {
+            addDebugInfo('Radio window missing', 'error');
+          }
+          
+          if (window.app.adminPanel) {
+            addDebugInfo('Admin panel ready', 'success');
+          } else {
+            addDebugInfo('Admin panel missing', 'error');
+          }
+        } else {
+          addDebugInfo('App object not found', 'error');
+        }
+      }, 1000);
+    });
+    
+    // Monitor console errors
+    const originalError = console.error;
+    console.error = function(...args) {
+      addDebugInfo('Console error: ' + args.join(' '), 'error');
+      originalError.apply(console, args);
+    };
+    
+    const originalLog = console.log;
+    console.log = function(...args) {
+      const message = args.join(' ');
+      if (message.includes('FAIT') || message.includes('initialized') || message.includes('ready')) {
+        addDebugInfo(message, 'success');
+      }
+      originalLog.apply(console, args);
+    };
+  </script>
+</body>
+</html>

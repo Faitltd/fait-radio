@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAIT Radio</title>
+  <link rel="stylesheet" href="css/styles.css">
+  <link rel="stylesheet" href="css/retro-game-style.css">
+</head>
+<body>
+  <div id="app-container">
+    <div id="desktop">
+      <!-- Header with game title and time -->
+      <header id="top-bar">
+        <div class="game-title">FAIT RADIO</div>
+        <aside id="time-display">
+          <div id="date">1987</div>
+          <div id="clock">04:22</div>
+        </aside>
+      </header>
+
+      <!-- Main game screen area -->
+      <section id="content-area">
+        <!-- Full-screen game windows will be dynamically added here -->
+      </section>
+
+      <!-- Arcade Control Panel -->
+      <div id="dock-container">
+        <div id="dock">
+          <ul id="dock-items">
+            <!-- Arcade buttons will be added here -->
+          </ul>
+        </div>
+      </div>
+    </div>
+  </div>
+  
+  <!-- Load scripts in correct order -->
+  <script src="js/stations.js"></script>
+  <script src="js/window-manager.js"></script>
+  <script src="js/youtube-player.js"></script>
+  <script src="js/background-manager.js"></script>
+  <script src="js/radio-window.js"></script>
+  <script src="js/admin-panel.js"></script>
+  <script src="js/mixtapes-window.js"></script>
+  <script src="js/newsroom-window.js"></script>
+  <script src="js/members-window.js"></script>
+  <script src="js/events-window.js"></script>
+  <script src="js/social-window.js"></script>
+  <script src="js/vacation-window.js"></script>
+  <script src="js/guestbook-window.js"></script>
+  <script src="js/playlist-maker-window.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>

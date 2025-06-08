@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAIT Radio - Audio Debug</title>
+  <style>
+    body {
+      font-family: monospace;
+      background: #000;
+      color: #00FFFF;
+      padding: 20px;
+      margin: 0;
+    }
+    .debug-container {
+      background: rgba(0, 255, 255, 0.1);
+      border: 2px solid #00FFFF;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 10px 0;
+    }
+    button {
+      background: rgba(0, 255, 255, 0.2);
+      border: 2px solid #00FFFF;
+      color: #00FFFF;
+      padding: 10px 15px;
+      margin: 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-family: monospace;
+    }
+    button:hover {
+      background: rgba(0, 255, 255, 0.4);
+    }
+    button:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+    }
+    .log {
+      background: rgba(0, 0, 0, 0.5);
+      border: 1px solid #333;
+      border-radius: 4px;
+      padding: 10px;
+      max-height: 300px;
+      overflow-y: auto;
+      font-size: 12px;
+      margin: 10px 0;
+    }
+    .success { color: #39FF14; }
+    .error { color: #FF1744; }
+    .warning { color: #FFA000; }
+    .info { color: #00FFFF; }
+    select, input {
+      background: rgba(0, 0, 0, 0.7);
+      border: 2px solid #00FFFF;
+      color: #00FFFF;
+      padding: 8px;
+      margin: 5px;
+      border-radius: 4px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <h1>🎵 FAIT Radio - Audio Debug</h1>
+  
+  <div class="debug-container">
+    <h2>🔧 YouTube Player Test</h2>
+    <div>
+      <button onclick="initializePlayer()" id="init-btn">Initialize YouTube Player</button>
+      <button onclick="testStation()" id="test-btn" disabled>Test Station</button>
+      <button onclick="playAudio()" id="play-btn" disabled>▶️ Play</button>
+      <button onclick="pauseAudio()" id="pause-btn" disabled>⏸️ Pause</button>
+    </div>
+    <div>
+      <label>Station:</label>
+      <select id="station-select">
+        <option value="">Choose Station...</option>
+      </select>
+      <label>Volume:</label>
+      <input type="range" id="volume-slider" min="0" max="100" value="50">
+      <span id="volume-display">50</span>
+    </div>
+    <div>
+      <strong>Status:</strong> <span id="status">Not initialized</span>
+    </div>
+  </div>
+
+  <div class="debug-container">
+    <h2>📊 Debug Information</h2>
+    <div>
+      <strong>Protocol:</strong> <span id="protocol-info"></span><br>
+      <strong>YouTube API:</strong> <span id="yt-api-status">Not loaded</span><br>
+      <strong>Player State:</strong> <span id="player-state">None</span><br>
+      <strong>Current Station:</strong> <span id="current-station">None</span>
+    </div>
+  </div>
+
+  <div class="debug-container">
+    <h2>📝 Debug Log</h2>
+    <button onclick="clearLog()">Clear Log</button>
+    <div class="log" id="debug-log">
+      <div class="info">Debug log initialized...</div>
+    </div>
+  </div>
+
+  <!-- Load required scripts -->
+  <script src="js/stations.js"></script>
+  <script src="js/youtube-player.js"></script>
+
+  <script>
+    let youtubePlayer = null;
+    let logEntries = [];
+
+    function addLog(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      logEntries.push(`<div class="${type}">${timestamp}: ${message}</div>`);
+      document.getElementById('debug-log').innerHTML = logEntries.join('');
+      document.getElementById('debug-log').scrollTop = document.getElementById('debug-log').scrollHeight;
+      console.log(`[Audio Debug] ${message}`);
+    }
+
+    function updateStatus(status) {
+      document.getElementById('status').textContent = status;
+      addLog(`Status: ${status}`, 'info');
+    }
+
+    function updateProtocolInfo() {
+      const protocol = window.location.protocol;
+      const hostname = window.location.hostname || 'file';
+      document.getElementById('protocol-info').textContent = `${protocol}//${hostname}`;
+      
+      if (protocol === 'file:') {
+        addLog('Running from file:// protocol - this may cause CORS issues', 'warning');
+      }
+    }
+
+    function populateStations() {
+      const select = document.getElementById('station-select');
+      if (window.stationData && Array.isArray(window.stationData)) {
+        window.stationData.forEach(station => {
+          const option = document.createElement('option');
+          option.value = station.id;
+          option.textContent = `${station.name} (${station.youtubeId})`;
+          select.appendChild(option);
+        });
+        addLog(`Loaded ${window.stationData.length} stations`, 'success');
+      } else {
+        addLog('No station data available', 'error');
+      }
+    }
+
+    function initializePlayer() {
+      addLog('Initializing YouTube player...', 'info');
+      updateStatus('Initializing...');
+      
+      try {
+        youtubePlayer = new YouTubePlayer();
+        
+        // Set up event listeners
+        youtubePlayer.addEventListener('ready', () => {
+          addLog('YouTube player ready!', 'success');
+          document.getElementById('yt-api-status').textContent = 'Ready';
+          document.getElementById('test-btn').disabled = false;
+          updateStatus('Ready');
+        });
+
+        youtubePlayer.addEventListener('stationLoaded', (event) => {
+          addLog(`Station loaded: ${event.station?.name}`, 'success');
+          document.getElementById('current-station').textContent = event.station?.name || 'Unknown';
+          document.getElementById('play-btn').disabled = false;
+          document.getElementById('pause-btn').disabled = false;
+          updateStatus('Station loaded - ready to play');
+        });
+
+        youtubePlayer.addEventListener('play', () => {
+          addLog('Playback started', 'success');
+          document.getElementById('player-state').textContent = 'Playing';
+          updateStatus('Playing');
+        });
+
+        youtubePlayer.addEventListener('pause', () => {
+          addLog('Playback paused', 'info');
+          document.getElementById('player-state').textContent = 'Paused';
+          updateStatus('Paused');
+        });
+
+        youtubePlayer.addEventListener('error', (event) => {
+          addLog(`Player error: ${event.message}`, 'error');
+          document.getElementById('player-state').textContent = 'Error';
+          updateStatus(`Error: ${event.message}`);
+        });
+
+        youtubePlayer.addEventListener('buffering', () => {
+          addLog('Buffering...', 'info');
+          document.getElementById('player-state').textContent = 'Buffering';
+          updateStatus('Buffering...');
+        });
+
+        document.getElementById('init-btn').disabled = true;
+        
+      } catch (error) {
+        addLog(`Error initializing player: ${error.message}`, 'error');
+        updateStatus('Initialization failed');
+      }
+    }
+
+    function testStation() {
+      const select = document.getElementById('station-select');
+      const stationId = select.value;
+      
+      if (!stationId) {
+        addLog('Please select a station first', 'warning');
+        return;
+      }
+
+      if (!youtubePlayer || !youtubePlayer.isReady) {
+        addLog('YouTube player not ready', 'error');
+        return;
+      }
+
+      const station = window.stationData.find(s => s.id === stationId);
+      if (!station) {
+        addLog(`Station not found: ${stationId}`, 'error');
+        return;
+      }
+
+      addLog(`Testing station: ${station.name} (${station.youtubeId})`, 'info');
+      updateStatus('Loading station...');
+      
+      try {
+        youtubePlayer.loadStation(station);
+      } catch (error) {
+        addLog(`Error loading station: ${error.message}`, 'error');
+        updateStatus('Failed to load station');
+      }
+    }
+
+    function playAudio() {
+      if (!youtubePlayer) {
+        addLog('Player not initialized', 'error');
+        return;
+      }
+
+      addLog('Attempting to play audio...', 'info');
+      try {
+        youtubePlayer.play();
+      } catch (error) {
+        addLog(`Error playing audio: ${error.message}`, 'error');
+      }
+    }
+
+    function pauseAudio() {
+      if (!youtubePlayer) {
+        addLog('Player not initialized', 'error');
+        return;
+      }
+
+      addLog('Pausing audio...', 'info');
+      try {
+        youtubePlayer.pause();
+      } catch (error) {
+        addLog(`Error pausing audio: ${error.message}`, 'error');
+      }
+    }
+
+    function clearLog() {
+      logEntries = [];
+      document.getElementById('debug-log').innerHTML = '<div class="info">Debug log cleared...</div>';
+    }
+
+    // Set up volume slider
+    document.getElementById('volume-slider').addEventListener('input', (e) => {
+      const volume = parseInt(e.target.value);
+      document.getElementById('volume-display').textContent = volume;
+      if (youtubePlayer) {
+        youtubePlayer.setVolume(volume);
+        addLog(`Volume set to ${volume}`, 'info');
+      }
+    });
+
+    // Initialize on page load
+    document.addEventListener('DOMContentLoaded', () => {
+      addLog('Audio debug page loaded', 'info');
+      updateProtocolInfo();
+      populateStations();
+      
+      // Check if YouTube API is already loaded
+      if (typeof YT !== 'undefined') {
+        document.getElementById('yt-api-status').textContent = 'Already loaded';
+        addLog('YouTube API already available', 'success');
+      }
+    });
+
+    // Capture console errors
+    const originalError = console.error;
+    console.error = function(...args) {
+      addLog(`Console Error: ${args.join(' ')}`, 'error');
+      originalError.apply(console, args);
+    };
+  </script>
+</body>
+</html>
