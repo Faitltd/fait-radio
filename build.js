@@ -116,9 +116,10 @@ function createProductionIndex() {
   
   let indexContent = fs.readFileSync(indexPath, 'utf8');
   
-  // Add production meta tags and optimizations
+  // Add production meta tags and optimizations with cache busting
+  const buildTime = Date.now();
   const productionMeta = `
-  <!-- Production Build - FAIT Radio -->
+  <!-- Production Build - FAIT Radio - Build: ${buildTime} -->
   <meta name="description" content="FAIT Radio - A synthwave-themed web radio station with YouTube integration">
   <meta name="keywords" content="radio, synthwave, youtube, music, web-app, retro, 80s, fait">
   <meta name="author" content="FAIT Team">
@@ -145,6 +146,16 @@ function createProductionIndex() {
   indexContent = indexContent.replace(
     '<meta name="viewport" content="width=device-width, initial-scale=1.0">',
     '<meta name="viewport" content="width=device-width, initial-scale=1.0">' + productionMeta
+  );
+
+  // Add cache busting to CSS and JS files
+  indexContent = indexContent.replace(
+    /href="css\/(.*?)\.css"/g,
+    `href="css/$1.css?v=${buildTime}"`
+  );
+  indexContent = indexContent.replace(
+    /src="js\/(.*?)\.js"/g,
+    `src="js/$1.js?v=${buildTime}"`
   );
   
   fs.writeFileSync(outputPath, indexContent);
