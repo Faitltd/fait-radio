@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>FAIT Radio - Debug</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background: #000;
+      color: #fff;
+      padding: 20px;
+    }
+    .debug-info {
+      background: #333;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 5px;
+    }
+    .error { color: #ff4444; }
+    .success { color: #44ff44; }
+    .warning { color: #ffaa44; }
+  </style>
+</head>
+<body>
+  <h1>FAIT Radio - Deployment Debug</h1>
+  
+  <div class="debug-info">
+    <h3>Page Load Status</h3>
+    <div id="page-status">Loading...</div>
+  </div>
+  
+  <div class="debug-info">
+    <h3>Script Loading Status</h3>
+    <div id="script-status">Checking scripts...</div>
+  </div>
+  
+  <div class="debug-info">
+    <h3>DOM Elements</h3>
+    <div id="dom-status">Checking DOM...</div>
+  </div>
+  
+  <div class="debug-info">
+    <h3>Console Errors</h3>
+    <div id="error-log">No errors yet...</div>
+  </div>
+
+  <script>
+    // Capture console errors
+    const errors = [];
+    const originalError = console.error;
+    console.error = function(...args) {
+      errors.push(args.join(' '));
+      originalError.apply(console, args);
+      updateErrorLog();
+    };
+
+    function updateStatus(elementId, message, type = 'info') {
+      const element = document.getElementById(elementId);
+      element.innerHTML = `<span class="${type}">${message}</span>`;
+    }
+
+    function updateErrorLog() {
+      const errorLog = document.getElementById('error-log');
+      if (errors.length === 0) {
+        errorLog.innerHTML = '<span class="success">No errors detected</span>';
+      } else {
+        errorLog.innerHTML = errors.map(error => 
+          `<div class="error">• ${error}</div>`
+        ).join('');
+      }
+    }
+
+    // Check page load
+    document.addEventListener('DOMContentLoaded', function() {
+      updateStatus('page-status', 'DOM Content Loaded ✓', 'success');
+      
+      // Check for required DOM elements
+      const requiredElements = [
+        'content-area',
+        'dock-items',
+        'top-bar',
+        'dock-container'
+      ];
+      
+      const domResults = [];
+      requiredElements.forEach(id => {
+        const element = document.getElementById(id);
+        if (element) {
+          domResults.push(`✓ #${id} found`);
+        } else {
+          domResults.push(`✗ #${id} missing`);
+        }
+      });
+      
+      updateStatus('dom-status', domResults.join('<br>'), 
+        domResults.some(r => r.includes('✗')) ? 'error' : 'success');
+      
+      // Check script loading
+      const scripts = [
+        'stations.js',
+        'window-manager.js',
+        'youtube-player.js',
+        'background-manager.js',
+        'radio-window.js',
+        'admin-panel.js',
+        'app.js'
+      ];
+      
+      let scriptsLoaded = 0;
+      const scriptResults = [];
+      
+      scripts.forEach(script => {
+        const scriptElement = document.querySelector(`script[src*="${script}"]`);
+        if (scriptElement) {
+          scriptResults.push(`✓ ${script} element found`);
+          scriptsLoaded++;
+        } else {
+          scriptResults.push(`✗ ${script} element missing`);
+        }
+      });
+      
+      updateStatus('script-status', 
+        `${scriptsLoaded}/${scripts.length} scripts found<br>` + scriptResults.join('<br>'),
+        scriptsLoaded === scripts.length ? 'success' : 'warning');
+      
+      // Test global objects
+      setTimeout(() => {
+        const globals = [];
+        
+        if (typeof WindowManager !== 'undefined') {
+          globals.push('✓ WindowManager class available');
+        } else {
+          globals.push('✗ WindowManager class missing');
+        }
+        
+        if (typeof stations !== 'undefined') {
+          globals.push(`✓ stations data available (${stations.length} stations)`);
+        } else {
+          globals.push('✗ stations data missing');
+        }
+        
+        if (typeof app !== 'undefined') {
+          globals.push('✓ app object available');
+        } else {
+          globals.push('✗ app object missing');
+        }
+        
+        updateStatus('script-status', 
+          updateStatus('script-status').innerHTML + '<br><br><strong>Global Objects:</strong><br>' + globals.join('<br>'),
+          'info');
+        
+        updateErrorLog();
+      }, 2000);
+    });
+
+    window.addEventListener('load', function() {
+      updateStatus('page-status', 'Page Fully Loaded ✓', 'success');
+    });
+
+    // Test if we can access the deployed files
+    fetch('/js/app.js')
+      .then(response => {
+        if (response.ok) {
+          updateStatus('script-status', 'app.js is accessible ✓', 'success');
+        } else {
+          updateStatus('script-status', `app.js returned ${response.status}`, 'error');
+        }
+      })
+      .catch(error => {
+        updateStatus('script-status', `Error accessing app.js: ${error.message}`, 'error');
+      });
+  </script>
+</body>
+</html>
