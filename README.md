@@ -2,6 +2,8 @@
 
 A retro-futuristic web-based radio station with 80's synthwave aesthetics, featuring fuscia and electric purple neon styling on a black background.
 
+🌐 **Live at**: https://radio.itsfait.com
+
 ## ✨ Features
 
 ### 🎵 Radio Player
